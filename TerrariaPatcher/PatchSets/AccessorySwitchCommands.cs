@@ -16,6 +16,8 @@ internal class AccessorySwitchCommands : PatchSet {
 
 	internal class InitializePatch : MainInitializePatch {
 		public static void Postfix() {
+			CommandManager.Commands.Add("hotbar", CommandHotbar);
+
 			CommandManager.Commands.Add("ruler", GetAccessorySwitchCommand(0, "on", "off"));
 			CommandManager.Commands.Add("mechanicalruler", GetAccessorySwitchCommand(1, "on", "off"));
 			CommandManager.Commands.Add("presserator", GetAccessorySwitchCommand(2, "on", "off"));
@@ -26,7 +28,23 @@ internal class AccessorySwitchCommands : PatchSet {
 			CommandManager.Commands.Add("yellowwire", GetAccessorySwitchCommand(7, "bright", "normal", "faded", "hidden"));
 			CommandManager.Commands.Add("wiremode", GetAccessorySwitchCommand(8, "forced", "normal"));
 			CommandManager.Commands.Add("actuators", GetAccessorySwitchCommand(9, "bright", "normal", "faded", "hidden"));
+			CommandManager.Commands.Add("blockswap", GetAccessorySwitchCommand(10, "on", "off"));
+			CommandManager.Commands.Add("torchswap", GetAccessorySwitchCommand(11, "on", "off"));
 		}
+	}
+
+	private static void CommandHotbar(string[] args) {
+		if (args[0].Equals("toggle", StringComparison.CurrentCultureIgnoreCase)) {
+			Main.player[Main.myPlayer].hbLocked = !Main.player[Main.myPlayer].hbLocked;
+		} else if (args[0].Equals("unlock", StringComparison.CurrentCultureIgnoreCase)) {
+			Main.player[Main.myPlayer].hbLocked = false;
+		} else if (args[0].Equals("lock", StringComparison.CurrentCultureIgnoreCase)) {
+			Main.player[Main.myPlayer].hbLocked = true;
+		} else {
+			CommandManager.FailMessage($"Usage: hotbar toggle|unlock|lock");
+			return;
+		}
+		SoundEngine.PlaySound(Terraria.ID.SoundID.Unlock);
 	}
 
 	private static CommandAction GetAccessorySwitchCommand(int index, params string[] keywords)
@@ -42,7 +60,7 @@ internal class AccessorySwitchCommands : PatchSet {
 					return;
 				}
 				Main.player[Main.myPlayer].builderAccStatus[index] = i;
-				SoundEngine.PlaySound(12);
 			}
+			SoundEngine.PlaySound(Terraria.ID.SoundID.MenuTick);
 		};
 }
