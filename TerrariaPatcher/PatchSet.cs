@@ -76,6 +76,7 @@ public abstract class PatchSet {
 			patch.currentPatchSetType = copyPatchSetType;
 			patch.currentPatchType = copyPatchType;
 
+			// Patch the target methods.
 			var methodDefs = patch.TargetMethod.GetMethodDefs();
 			foreach (var methodDef in methodDefs) {
 				if (methodDef.Module != targetModule.ModuleDef)
@@ -98,6 +99,9 @@ public abstract class PatchSet {
 			foreach (var property in patchTypeDef.Properties.Where(f => (f.GetMethod ?? f.SetMethod).IsStatic).ToList()) {
 				property.DeclaringType = copyPatchType;
 			}
+			foreach (var ev in patchTypeDef.Events.Where(f => (f.AddMethod ?? f.RemoveMethod ?? f.InvokeMethod).IsStatic).ToList()) {
+				ev.DeclaringType = copyPatchType;
+			}
 			foreach (var field in patchTypeDef.Fields.Where(f => f.IsStatic).ToList()) {
 				field.DeclaringType = copyPatchType;
 			}
@@ -118,6 +122,9 @@ public abstract class PatchSet {
 		foreach (var property in patchSetTypeDef.Properties.Where(f => (f.GetMethod ?? f.SetMethod).IsStatic).ToList()) {
 			property.DeclaringType = copyPatchSetType;
 		}
+		foreach (var ev in patchSetTypeDef.Events.Where(f => (f.AddMethod ?? f.RemoveMethod ?? f.InvokeMethod).IsStatic).ToList()) {
+			ev.DeclaringType = copyPatchSetType;
+		}
 		foreach (var field in patchSetTypeDef.Fields.ToList()) {
 			var attributeDef = field.CustomAttributes.FirstOrDefault(a => a.TypeFullName == typeof(ReversePatchAttribute).FullName);
 			if (attributeDef is not null) {
@@ -128,7 +135,7 @@ public abstract class PatchSet {
 				var targetMethod = this.GetType().GetField(field.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
 					.GetCustomAttribute<ReversePatchAttribute>().PatchTarget.GetMethodDefs().Single();
 
-				// Make it at least internal access.
+				// Change the target method to at least internal access if necessary.
 				if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private)
 					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.Assembly;
 				else if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamANDAssem)
