@@ -25,7 +25,7 @@ internal class Watch24Hour : PatchSet {
 		return $"{hours:00}:{minutes:00}";
 	}
 
-	internal class SundialHintPatch : Patch {
+	internal class DrawInfoAccsPatch : Patch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "DrawInfoAccs");
 
 		public override void PatchMethodBody(MethodDef method) {
