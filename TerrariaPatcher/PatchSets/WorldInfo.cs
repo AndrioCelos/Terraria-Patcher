@@ -21,7 +21,7 @@ internal class WorldInfo : PatchSet {
 
 	internal class InitializePatch : MainInitializePatch {
 		public static void Prefix() {
-			CommandManager.Commands.Add("world", args => ShowWorldInfo(false));
+			CommandManager.Commands.Add("world", new((_, _, _) => ShowWorldInfo(false), 0, 0, "", "Shows information about the world."));
 			Player.Hooks.OnEnterWorld += p => {
 				if (Main.worldID != lastWorldID) {
 					lastWorldID = Main.worldID;

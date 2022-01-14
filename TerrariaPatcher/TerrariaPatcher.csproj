@@ -69,6 +69,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mods\Command.cs" />
     <Compile Include="Mods\CommandManager.cs" />
     <Compile Include="InstructionHelper.cs" />
     <Compile Include="Mods\KeyBinding.cs" />

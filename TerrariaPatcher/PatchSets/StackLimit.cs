@@ -26,7 +26,7 @@ internal class StackLimitMod : PatchSet {
 
 	internal class InitializePatch : MainInitializePatch {
 		public static void Prefix()
-			=> CommandManager.Commands.Add("stack", args => {
+			=> CommandManager.Commands.Add("stack", new((command, label, args) => {
 				if (args.Length == 0) {
 					StackLimit = int.MaxValue;
 					return;
@@ -34,8 +34,8 @@ internal class StackLimitMod : PatchSet {
 				if (int.TryParse(args[0], out var n) && n >= 0)
 					StackLimit = n;
 				else
-					Main.NewText("Usage: .stack <number>", 147, 112, 219);
-			});
+					command.ShowParametersFailMessage(label);
+			}, 0, 1, "[n]", "Limits the next purchase, duplication or stack split to the specified number of items, or removes an existing limit."));
 	}
 
 	internal class LeftClickPatch : Patch {

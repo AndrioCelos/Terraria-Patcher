@@ -39,10 +39,11 @@ internal class TallyCounter : PatchSet {
 	}
 
 	internal class InitializePatch : MainInitializePatch {
-		public static void Prefix() => CommandManager.Commands.Add("counter", CommandCounter);
+		public static void Prefix() => CommandManager.Commands.Add("counter", new(CommandCounter, 1, 2, "hide/show/toggle/- [number]/+ [number]/set <number>",
+			   "Shows, hides or controls the mod tally counter."));
 	}
 
-	public static void CommandCounter(string[] args) {
+	public static void CommandCounter(Command command, string label, string[] args) {
 		var soundID = SoundID.MenuTick;
 		switch (args[0].ToLower()) {
 			case "hide": CounterShowing = false; break;
@@ -52,13 +53,13 @@ internal class TallyCounter : PatchSet {
 				int n;
 				if (args.Length > 1) {
 					if (!int.TryParse(args[1], out n)) {
-						CommandManager.FailMessage($"Invalid number.");
+						CommandManager.FailMessage("Invalid number.");
 						return;
 					}
 				} else if (args[0][0] is '-' or '+') {
 					n = 1;
 				} else {
-					CommandManager.FailMessage($"This command requires a number.");
+					command.ShowParametersFailMessage(label);
 					return;
 				}
 				switch (args[0][0]) {
@@ -74,7 +75,7 @@ internal class TallyCounter : PatchSet {
 				soundID = SoundID.Unlock;
 				break;
 			default:
-				CommandManager.FailMessage($"Unknown stopwatch command: {args[0]}");
+				command.ShowParametersFailMessage(label);
 				return;
 		}
 		SoundEngine.PlaySound(soundID);

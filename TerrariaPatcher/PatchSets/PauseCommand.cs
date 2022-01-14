@@ -23,15 +23,14 @@ internal class PauseCommand : PatchSet {
 
 	internal class InitializePatch : MainInitializePatch {
 		public static void Prefix() {
-			CommandManager.Commands.Add("pause", args => {
+			CommandManager.Commands.Add("pause", new((_, _, args) => {
 				if (Main.netMode != 0) {
 					Main.NewText("You can't pause in multiplayer.", 192, 64, 64);
 					return;
 				}
-				IsPaused = args.Length > 0 && args[0].Equals("toggle", StringComparison.CurrentCultureIgnoreCase)
-					? !IsPaused : true;
-			});
-			CommandManager.Commands.Add("unpause", args => IsPaused = false);
+				IsPaused = !IsPaused || args.Length == 0 || !args[0].Equals("toggle", StringComparison.CurrentCultureIgnoreCase);
+			}, 0, 1, "[toggle]", "Pauses the game or toggles pause state."));
+			CommandManager.Commands.Add("unpause", new((_, _, _) => IsPaused = false, 0, 0, "", "Unpauses the game."));
 		}
 	}
 

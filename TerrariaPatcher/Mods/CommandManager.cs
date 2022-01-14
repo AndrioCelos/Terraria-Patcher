@@ -16,11 +16,9 @@ using Terraria.UI.Chat;
 
 namespace TerrariaPatcher.Mods;
 
-public delegate void CommandAction(string[] args);
-
 internal static class CommandManager {
 	public static List<KeyBinding> KeyBindings { get; } = new();
-	public static SortedDictionary<string, CommandAction> Commands { get; } = new(StringComparer.CurrentCultureIgnoreCase);
+	public static SortedDictionary<string, Command> Commands { get; } = new(StringComparer.CurrentCultureIgnoreCase);
 
 	private static List<Keys> currentKeys = new();
 	private static readonly List<Keys> currentKeys2 = new();
@@ -30,19 +28,20 @@ internal static class CommandManager {
 	private static float prevMusicVolume;
 
 	public static void Message(string s) => Message(s, ModManager.AccentColor);
-	public static void Message(string s, Color color) => Main.NewText(s, color.R, color.G, color.B);
+	public static void Message(string s, Color color) => Main.NewTextMultiline(s, false, color, (int) ((Main.screenWidth - 320) / Main.UIScale));
+	// The division is to work around a badly-written word wrapping function that overestimates how much text can fit.
 	public static void SuccessMessage(string s) => Message(s, ModManager.SuccessColor);
 	public static void FailMessage(string s) => Message(s, ModManager.FailColor);
 
 	public static void Initialise() {
-		Commands.Add("help", CommandHelp);
-		Commands.Add("music", CommandMusic);
-		Commands.Add("say", CommandSay);
-		Commands.Add("party", CommandParty);
-		Commands.Add("pvp", CommandPvP);
-		Commands.Add("bind", CommandBind);
-		Commands.Add("unbind", CommandUnbind);
-		Commands.Add("listbindings", CommandListBindings);
+		Commands.Add("help", new(CommandHelp, 0, 1, "[command]", "Shows a list of commands or information about the specified command."));
+		Commands.Add("music", new(CommandMusic, 1, 1, "on/off/toggle/[+/-]<volume %>", "Adjusts the music volume."));
+		Commands.Add("say", new(CommandSay, 1, 1, "<message>", "Sends a chat message."));
+		Commands.Add("party", new(CommandParty, 1, 1, "none/red/yellow/green/blue/purple", "Joins or leaves a party."));
+		Commands.Add("pvp", new(CommandPvP, 1, 1, "off/on/toggle", "Switches PvP on or off."));
+		Commands.Add("bind", new(CommandBind, 2, 3, "<keystrokes> <command> [arguments]", "Binds a client command to a keystroke or chord. Examples of keystrokes: 'F1'; 'Ctrl+M'; 'Ctrl+P,Ctrl+1'"));
+		Commands.Add("unbind", new(CommandUnbind, 1, 1, "<keystrokes>", "Unbinds a keystroke or chord from a client command."));
+		Commands.Add("listbindings", new(CommandListBindings, 0, 1, "[keystrokes]", "Lists all key bindings, or the command bound to the specified sequence."));
 	}
 	public static void InitialisePost() => Load();
 
@@ -59,7 +58,7 @@ internal static class CommandManager {
 				}
 				binaryWriter.Write((byte) keystroke.Modifiers);
 			}
-			binaryWriter.Write(binding.Command);
+			binaryWriter.Write(binding.CommandLabel);
 			binaryWriter.Write(binding.Arguments.Length);
 			foreach (var parameter in binding.Arguments) {
 				binaryWriter.Write(parameter);
@@ -72,13 +71,13 @@ internal static class CommandManager {
 		if (File.Exists(Path.Combine(Main.SavePath, "commands.dat"))) {
 			using var reader = new BinaryReader(File.Open(Path.Combine(Main.SavePath, "commands.dat"), FileMode.Open, FileAccess.Read));
 			var bindingCount = reader.ReadInt32();
-			for (var i = 0; i < bindingCount; ++i) {
+			for (var i = 0; i < bindingCount; i++) {
 				var keystrokeCount = reader.ReadInt32();
 				var strokes = new Keystroke[keystrokeCount];
-				for (var j = 0; j < keystrokeCount; ++j) {
+				for (var j = 0; j < keystrokeCount; j++) {
 					var keyCount = reader.ReadInt32();
 					var keys = new Keys[keyCount];
-					for (var k = 0; k < keyCount; ++k)
+					for (var k = 0; k < keyCount; k++)
 						keys[k] = (Keys) reader.ReadInt32();
 
 					var modifiers = (Keystroke.ModifierKeys) reader.ReadByte();
@@ -86,49 +85,58 @@ internal static class CommandManager {
 				}
 
 				var commandText = reader.ReadString();
-				Commands.TryGetValue(commandText, out var action);
+				Commands.TryGetValue(commandText, out var command);
 
 				var argCount = reader.ReadInt32();
 				var args = new string[argCount];
-				for (var j = 0; j < argCount; ++j)
+				for (var j = 0; j < argCount; j++)
 					args[j] = reader.ReadString();
 
-				KeyBindings.Add(new KeyBinding(strokes, commandText, action, args));
+				KeyBindings.Add(new KeyBinding(strokes, commandText, command, args));
 			}
 		}
 	}
 
 	public static void HandleCommand(string line) {
-		string? commandName = null; var args = new List<string>();
+		string? label = null; Command? command = null; var args = new List<string>();
 		var builder = new StringBuilder();
 		for (var i = 0; i < line.Length; i++) {
 			for (; i < line.Length; i++) {
 				var c = line[i];
-
 				if (c == '"') {
 					for (i++; i < line.Length; i++) {
 						c = line[i];
 						if (c == '"') break;
 						builder.Append(char.ToLower(c));
 					}
-				} else if (char.IsWhiteSpace(c)) break;
-				else builder.Append(c);
+				} else if (char.IsWhiteSpace(c) && (command is null || args.Count >= command.MaxParameters - 1))
+					break;
+				else
+					builder.Append(c);
 			}
 			if (builder.Length == 0) continue;
-			if (commandName is null) commandName = builder.ToString();
-			else args.Add(builder.ToString());
+			if (command is null) {
+				label = builder.ToString();
+				if (!Commands.TryGetValue(label, out command)) {
+					FailMessage($"Unknown command: {label}");
+					return;
+				}
+			} else
+				args.Add(builder.ToString());
 			builder.Clear();
 		}
 
-		if (commandName is null) return;
-		if (Commands.TryGetValue(commandName, out var command)) {
+		if (command is null) return;
+		if (args.Count < command.MinParameters) {
+			FailMessage("Not enough arguments.");
+			command.ShowParametersFailMessage(label!);
+		} else {
 			try {
-				command(args.ToArray());
+				command.Action(command, label!, args.ToArray());
 			} catch (Exception ex) {
 				FailMessage($"The command failed: {ex}");
 			}
-		} else
-			FailMessage($"Unknown command: {commandName}");
+		}
 	}
 
 	public static void HandleInput(IEnumerable<Keys> pressedKeys) {
@@ -168,10 +176,7 @@ internal static class CommandManager {
 					binding.progress++;
 					binding.canReset = false;
 					if (binding.progress == binding.Keystrokes.Length) {
-						if (binding.Action is not null)
-							binding.Action.Invoke(binding.Arguments);
-						else
-							FailMessage($"Bound command '{binding.Command}' not found.");
+						binding.Invoke();
 						binding.progress = 0;
 					}
 				}
@@ -184,10 +189,7 @@ internal static class CommandManager {
 						binding.progress++;
 						binding.canReset = false;
 						if (binding.progress == binding.Keystrokes.Length) {
-							if (binding.Action is not null)
-								binding.Action.Invoke(binding.Arguments);
-							else
-								FailMessage($"Bound command '{binding.Command}' not found.");
+							binding.Invoke();
 							binding.progress = 0;
 						}
 					}
@@ -211,23 +213,19 @@ internal static class CommandManager {
 		currentKeys.Clear();
 	}
 
-	private static void CommandMusic(string[] parameters) {
-		if (parameters.Length != 1) {
-			FailMessage("Usage: .music on|off|toggle|[+|-]<volume>");
-			return;
-		}
+	private static void CommandMusic(Command command, string label, string[] args) {
 		float offset;
-		if (parameters[0].Equals("on", StringComparison.OrdinalIgnoreCase)) {
+		if (args[0].Equals("on", StringComparison.OrdinalIgnoreCase)) {
 			if (prevMusicVolume > 0) {
 				Main.musicVolume = prevMusicVolume;
 				prevMusicVolume = 0;
 			}
-		} else if (parameters[0].Equals("off", StringComparison.OrdinalIgnoreCase)) {
+		} else if (args[0].Equals("off", StringComparison.OrdinalIgnoreCase)) {
 			if (Main.musicVolume > 0) {
 				prevMusicVolume = Main.musicVolume;
 				Main.musicVolume = 0;
 			}
-		} else if (parameters[0].Equals("toggle", StringComparison.OrdinalIgnoreCase)) {
+		} else if (args[0].Equals("toggle", StringComparison.OrdinalIgnoreCase)) {
 			if (Main.musicVolume == 0) {
 				Main.musicVolume = prevMusicVolume;
 				prevMusicVolume = 0;
@@ -235,34 +233,26 @@ internal static class CommandManager {
 				prevMusicVolume = Main.musicVolume;
 				Main.musicVolume = 0;
 			}
-		} else if (parameters[0].StartsWith("+") || parameters[0].StartsWith("-")) {
-			if (float.TryParse(parameters[0].Substring(1), out offset)) {
-				if (float.IsNaN(offset)) {
-					FailMessage("Usage: .music on|off|toggle|[+|-]<volume>");
-					return;
-				}
-				offset /= parameters[0][0] == '-' ? -100 : 100;
+		} else if (args[0].StartsWith("+") || args[0].StartsWith("-")) {
+			if (float.TryParse(args[0].Substring(1), out offset) && !float.IsNaN(offset)) {
+				offset /= args[0][0] == '-' ? -100 : 100;
 				Main.musicVolume += offset;
 				if (Main.musicVolume > 1f) Main.musicVolume = 1f;
 				else if (Main.musicVolume < 0f) Main.musicVolume = 0f;
 			} else {
-				FailMessage("Usage: .music on|off|toggle|[+|-]<volume>");
+				FailMessage("Invalid number");
 			}
-		} else if (float.TryParse(parameters[0], out offset)) {
-			if (float.IsNaN(offset)) {
-				FailMessage("Usage: .music on|off|toggle|[+|-]<volume>");
-				return;
-			}
+		} else if (float.TryParse(args[0], out offset) && !float.IsNaN(offset)) {
 			Main.musicVolume = offset / 100f;
 			if (Main.musicVolume > 1f) Main.musicVolume = 1f;
 			else if (Main.musicVolume < 0f) Main.musicVolume = 0f;
 		} else {
-			FailMessage("Usage: .music on|off|toggle|[+|-]<volume>");
+			command.ShowParametersFailMessage(label);
 		}
 	}
 
-	private static void CommandSay(string[] parameters) {
-		var message = ChatManager.Commands.CreateOutgoingMessage(string.Join(" ", parameters));
+	private static void CommandSay(Command command, string label, string[] args) {
+		var message = ChatManager.Commands.CreateOutgoingMessage(string.Join(" ", args));
 		if (Main.netMode == 1) {
 			ChatHelper.SendChatMessageFromClient(message);
 			return;
@@ -379,18 +369,21 @@ internal static class CommandManager {
 		_ => Enum.TryParse<Keys>(s, true, out var key) ? (key, (Keystroke.ModifierKeys) 0) : throw new FormatException($"Unknown key: {s}")
 	};
 
-	private static void CommandHelp(string[] parameters)
-		=> Message($"Commands: {string.Join(" ", Commands.Keys.OrderBy(s => s))}");
-
-	private static void CommandBind(string[] parameters) {
-		if (parameters.Length < 2) {
-			FailMessage("Usage: .bind <keystroke>[,<keystroke>]* <command> [parameters]");
-			return;
+	private static void CommandHelp(Command command, string label, string[] args) {
+		if (args.Length == 0)
+			Message($"Commands: {string.Join(", ", Commands.Keys.OrderBy(s => s))}");
+		else {
+			if (Commands.TryGetValue(args[0], out var command2)) {
+				Message($"Usage: {args[0]} {command2.ParametersHint}");
+				Message(command2.Description);
+			}
 		}
+	}
 
-		var keystrokes = ParseKeystrokes(parameters[0]);
+	private static void CommandBind(Command command, string label, string[] args) {
+		var keystrokes = ParseKeystrokes(args[0]);
 
-		for (var i = 0; i < KeyBindings.Count; ++i) {
+		for (var i = 0; i < KeyBindings.Count; i++) {
 			var binding = KeyBindings[i];
 			if (binding.Keystrokes.SequenceEqual(keystrokes)) {
 				FailMessage("That command is already bound.");
@@ -398,23 +391,18 @@ internal static class CommandManager {
 			}
 		}
 
-		if (Commands.TryGetValue(parameters[1], out var command)) {
-			KeyBindings.Add(new KeyBinding(keystrokes, parameters[1], command, parameters.Skip(2).ToArray()));
+		if (Commands.TryGetValue(args[1], out var command2)) {
+			KeyBindings.Add(new KeyBinding(keystrokes, args[1], command2, args.Skip(2).ToArray()));
 			Save();
 			SuccessMessage("Command bound successfully.");
 		} else
-			FailMessage($"Unknown command: {parameters[1]}");
+			FailMessage($"Unknown command: {args[1]}");
 	}
 
-	private static void CommandUnbind(string[] parameters) {
-		if (parameters.Length < 1) {
-			FailMessage("Usage: .unbind <keystroke>[,<keystroke>]*");
-			return;
-		}
+	private static void CommandUnbind(Command command, string label, string[] args) {
+		var keystrokes = ParseKeystrokes(args[0]);
 
-		var keystrokes = ParseKeystrokes(parameters[0]);
-
-		for (var i = 0; i < KeyBindings.Count; ++i) {
+		for (var i = 0; i < KeyBindings.Count; i++) {
 			var binding = KeyBindings[i];
 			if (binding.Keystrokes.SequenceEqual(keystrokes)) {
 				KeyBindings.RemoveAt(i);
@@ -424,48 +412,43 @@ internal static class CommandManager {
 			}
 		}
 
-		FailMessage("That command is not bound.");
+		FailMessage("That sequence is not bound to any command.");
 	}
 
-	private static void CommandListBindings(string[] parameters) {
-		if (parameters.Length >= 2) {
-			FailMessage("Usage: .listbindings [<keystroke>[,<keystroke>]*]");
-			return;
-		}
+	private static void CommandListBindings(Command command, string label, string[] args) {
+		Keystroke[]? keystrokes = args.Length != 0 ? ParseKeystrokes(args[0]) : null;
 
-		Keystroke[]? keystrokes = parameters.Length != 0 ? ParseKeystrokes(parameters[0]) : null;
-
-		for (var i = 0; i < KeyBindings.Count; ++i) {
+		var any = false;
+		for (var i = 0; i < KeyBindings.Count; i++) {
 			var binding = KeyBindings[i];
 			if (keystrokes is null || binding.Keystrokes.Take(keystrokes.Length).SequenceEqual(keystrokes)) {
-				Message(string.Join<Keystroke>(",", binding.Keystrokes) + " is bound to: " + binding.Command + " " + string.Join(" ", binding.Arguments));
+				any = true;
+				Message(string.Join<Keystroke>(",", binding.Keystrokes) + " is bound to: " + binding.CommandLabel + " " + string.Join(" ", binding.Arguments));
 			}
 		}
+		if (!any)
+			Message(args.Length == 0 ? "There are no key bindings." : "That sequence is not bound to any command.");
 	}
 
-	private static void CommandParty(string[] parameters) {
+	private static void CommandParty(Command command, string label, string[] args) {
 		if (Main.netMode != 1) {
 			FailMessage("You can't join a party in single player.");
 			return;
 		}
 		if (Main.teamCooldown != 0) {
-			FailMessage("You must wait " + Math.Ceiling((double) Main.teamCooldown / 60D) + (Main.teamCooldown <= 60 ? " second." : " seconds."));
-			return;
-		}
-		if (parameters.Length != 1) {
-			FailMessage("Usage: .party none|red|yellow|green|blue");
+			FailMessage($"You must wait {(Main.teamCooldown + 59) / 60} + {(Main.teamCooldown <= 60 ? " second." : " seconds.")}");
 			return;
 		}
 
 		int party;
-		switch (parameters[0].ToLower()) {
+		switch (args[0].ToLower()) {
 			case "none": case "n": party = 0; break;
 			case "red": case "r": party = 1; break;
 			case "yellow": case "y": party = 4; break;
 			case "green": case "g": party = 2; break;
 			case "blue": case "b": party = 3; break;
-			case "pink": case "purple": case "p": party = 3; break;
-			default: FailMessage("Usage: .party none|[party]"); return;
+			case "pink": case "purple": case "p": party = 5; break;
+			default: command.ShowParametersFailMessage(label); return;
 		}
 
 		if (Main.player[Main.myPlayer].team != party) {
@@ -479,21 +462,17 @@ internal static class CommandManager {
 		NetMessage.SendData(45, -1, -1, null, Main.myPlayer, 0f, 0f, 0f, 0);
 	}
 
-	private static void CommandPvP(string[] parameters) {
+	private static void CommandPvP(Command command, string label, string[] args) {
 		if (Main.netMode != 1) {
 			FailMessage("You can't toggle PvP in single player.");
 			return;
 		}
 		if (Main.teamCooldown != 0) {
-			FailMessage("You must wait " + Math.Ceiling(Main.teamCooldown / 60D) + (Main.teamCooldown <= 60 ? " second." : " seconds."));
-			return;
-		}
-		if (parameters.Length != 1) {
-			FailMessage("Usage: .pvp off|on|toggle");
+			FailMessage($"You must wait {(Main.teamCooldown + 59) / 60} + {(Main.teamCooldown <= 60 ? " second." : " seconds.")}");
 			return;
 		}
 
-		switch (parameters[0].ToLower()) {
+		switch (args[0].ToLower()) {
 			case "off":
 				if (!Main.player[Main.myPlayer].hostile) {
 					FailMessage("You already have PvP disabled.");
@@ -512,7 +491,7 @@ internal static class CommandManager {
 				Main.player[Main.myPlayer].hostile = !Main.player[Main.myPlayer].hostile;
 				break;
 			default:
-				FailMessage("Usage: .pvp off|on|toggle");
+				command.ShowParametersFailMessage(label); 
 				return;
 		}
 

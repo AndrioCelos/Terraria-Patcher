@@ -22,7 +22,7 @@ internal class Commands : PatchSet {
 	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Mods) };
 
 	public override void BeforeApply() {
-		ImportType(typeof(CommandAction), "Terraria");
+		ImportType(typeof(Command), "Terraria");
 		ImportType(typeof(CommandManager), "Terraria");
 		ImportType(typeof(KeyBinding), "Terraria");
 		ImportType(typeof(Keystroke), "Terraria");

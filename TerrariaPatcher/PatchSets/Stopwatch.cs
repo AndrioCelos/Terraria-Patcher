@@ -49,13 +49,14 @@ internal class Stopwatch : PatchSet {
 
 	internal class InitializePatch : MainInitializePatch {
 		public static void Prefix() {
-			CommandManager.Commands.Add("stopwatch", CommandStopwatch);
+			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 1, "hide/show/toggle/start/stop/startstop/reset/restart/split",
+				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
 			Main.OnTickForInternalCodeOnly += Main_OnTickForInternalCodeOnly;
 		}
 	}
 
-	private static void Hooks_OnEnterWorld(Player obj) {
+	private static void Hooks_OnEnterWorld(Player _) {
 		// Currently the stopwatch is not saved if you leave and enter a different world.
 		if (Main.worldID != lastWorldID) {
 			lastWorldID = Main.worldID;
@@ -70,7 +71,7 @@ internal class Stopwatch : PatchSet {
 		if (StopwatchRunning) StopwatchTime++;
 	}
 	
-	public static void CommandStopwatch(string[] args) {
+	public static void CommandStopwatch(Command command, string label, string[] args) {
 		switch (args[0].ToLower()) {
 			case "hide": StopwatchShowing = false; break;
 			case "show": StopwatchShowing = true; break;
@@ -104,7 +105,7 @@ internal class Stopwatch : PatchSet {
 				StopwatchSplitTime = StopwatchSplitTime != 0 ? 0 : StopwatchTime;
 				break;
 			default:
-				CommandManager.FailMessage($"Unknown stopwatch command: {args[0]}");
+				command.ShowParametersFailMessage(label);
 				return;
 		}
 		SoundEngine.PlaySound(SoundID.MenuTick);
