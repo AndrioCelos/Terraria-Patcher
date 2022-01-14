@@ -147,10 +147,16 @@ public partial class MainForm : Form {
 	}
 
 	private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
-		//this.okButton.Enabled = true;
-		this.statusLabel.Text = "Complete";
-		this.progressBar.Style = ProgressBarStyle.Continuous;
-		this.progressBar.Value = this.progressBar.Maximum;
+		if (e.Error is null) {
+			this.statusLabel.Text = "Complete";
+			this.progressBar.Style = ProgressBarStyle.Continuous;
+			this.progressBar.Value = this.progressBar.Maximum;
+		} else {
+			this.statusLabel.Text = "Patch failed";
+			this.progressBar.Style = ProgressBarStyle.Continuous;
+			this.progressBar.Value = 0;
+			MessageBox.Show(this, $"An exception occurred while patching. Please restart the application.\n{e.Error}", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+		}
 	}
 
 	private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e) {
