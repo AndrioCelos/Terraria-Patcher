@@ -25,6 +25,8 @@ internal class TallyCounter : PatchSet {
 	internal static bool CounterShowing;
 	internal static int CounterCount;
 
+	internal static string GetTitle(string normalTitle) => CounterShowing ? Lang.GetItemName(ItemID.TallyCounter).Value : normalTitle;
+
 	internal static string? GetDisplayString(ref Color infoColour) {
 		if (CounterShowing) {
 			infoColour.R = (byte) (infoColour.R * ModManager.AccentColor.R / 255);
@@ -101,6 +103,8 @@ internal class TallyCounter : PatchSet {
 							instructions.Insert(i + 2, OpCodes.Stloc_S.ToInstruction(local));
 							instructions.Insert(i + 3, OpCodes.Ldloc_S.ToInstruction(local));
 							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
+
+							instructions.Insert(i - 1, Call(TallyCounter.GetTitle));
 
 							return;
 						}

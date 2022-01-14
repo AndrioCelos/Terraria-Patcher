@@ -28,6 +28,8 @@ internal class Stopwatch : PatchSet {
 	internal static int StopwatchSplitTime;
 	internal static int lastWorldID;
 
+	internal static string GetTitle(string normalTitle) => StopwatchShowing ? Lang.GetItemName(ItemID.Stopwatch).Value : normalTitle;
+
 	internal static string? GetDisplayString(ref Color infoColour) {
 		if (StopwatchShowing) {
 			var time = StopwatchSplitTime != 0 ? StopwatchSplitTime : StopwatchTime;
@@ -135,6 +137,8 @@ internal class Stopwatch : PatchSet {
 							instructions.Insert(i + 2, OpCodes.Stloc_S.ToInstruction(local));
 							instructions.Insert(i + 3, OpCodes.Ldloc_S.ToInstruction(local));
 							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
+							
+							instructions.Insert(i - 1, Call(Stopwatch.GetTitle));
 
 							return;
 						}
