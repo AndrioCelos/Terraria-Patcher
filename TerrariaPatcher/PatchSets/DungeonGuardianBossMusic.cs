@@ -1,15 +1,11 @@
 ﻿#nullable enable
 
 using System;
-using System.Collections.Generic;
 
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-using Microsoft.Xna.Framework;
-
 using Terraria;
-using Terraria.GameContent.RGB;
 using Terraria.ID;
 
 namespace TerrariaPatcher.PatchSets;

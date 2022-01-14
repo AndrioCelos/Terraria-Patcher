@@ -1,10 +1,6 @@
 ﻿#nullable enable
 
-using System;
-
 using Microsoft.Xna.Framework;
-
-using Terraria;
 
 namespace TerrariaPatcher.Mods;
 

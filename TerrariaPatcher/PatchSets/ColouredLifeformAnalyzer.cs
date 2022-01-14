@@ -9,10 +9,7 @@ using dnlib.DotNet.Emit;
 using Microsoft.Xna.Framework;
 
 using Terraria;
-using Terraria.Audio;
 using Terraria.ID;
-
-using TerrariaPatcher.Mods;
 
 namespace TerrariaPatcher.PatchSets;
 

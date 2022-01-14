@@ -2,8 +2,6 @@
 
 using System;
 
-using Terraria;
-
 using TerrariaPatcher.Mods;
 
 namespace TerrariaPatcher.PatchSets;

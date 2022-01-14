@@ -6,10 +6,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
-using Microsoft.Xna.Framework;
-
 using Terraria;
-using Terraria.GameContent.RGB;
 
 namespace TerrariaPatcher.PatchSets;
 
