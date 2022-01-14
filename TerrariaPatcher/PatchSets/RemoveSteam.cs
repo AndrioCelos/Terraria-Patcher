@@ -1,4 +1,5 @@
-﻿#nullable enable
+﻿#if DEBUG
+#nullable enable
 
 using System;
 
@@ -16,3 +17,4 @@ internal class RemoveSteam : PatchSet {
 		public static void Prefix(ref SocialMode? mode) => mode ??= SocialMode.None;
 	}
 }
+#endif
