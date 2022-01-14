@@ -35,7 +35,7 @@ internal class BossBars : PatchSet {
 				var texture = TextureAssets.Item[ItemID.DD2ElderCrystal].Value;
 				var barIconFrame = texture.Frame();
 				var life = Terraria.GameContent.Events.DD2Event.LostThisRun ? 0 : npc.life;
-				DrawFancyBar(spriteBatch, texture, barIconFrame, npc.FullName, 0, 0, life, npc.lifeMax, new(0, -50), new(6, 6));
+				DrawFancyBar(spriteBatch, texture, barIconFrame, npc.FullName, 0, 0, life, npc.lifeMax, new(0, -50), new(2, 4));
 			}
 		}
 	}
@@ -83,7 +83,7 @@ internal class BossBars : PatchSet {
 
 		var text = (shield > 0 || maxLife == 0) ? $"{name}: {shield} / {maxShield}" : $"{name}: {life} / {maxLife}";
 		var font = FontAssets.MouseText.Value;
-		ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, text, new Vector2((Main.ScreenSize.X - font.MeasureString(text).X) / 2, Main.ScreenSize.Y - 60) + extraOffset.ToVector2(), Color.White, 0, Vector2.Zero, Vector2.One, -1, 2);
+		ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, text, new Vector2((Main.ScreenSize.X - font.MeasureString(text).X) / 2, Main.ScreenSize.Y - 62) + extraOffset.ToVector2(), Color.White, 0, Vector2.Zero, Vector2.One, -1, 2);
 	}
 	public static void DrawFancyBar(SpriteBatch spriteBatch, Texture2D barIconTexture, Rectangle barIconFrame, string name, int life, int maxLife)
 		=> DrawFancyBar(spriteBatch, barIconTexture, barIconFrame, name, life, maxLife, 0, 0);
