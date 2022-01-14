@@ -385,7 +385,7 @@ internal static class CommandManager {
 		for (var i = 0; i < KeyBindings.Count; i++) {
 			var binding = KeyBindings[i];
 			if (binding.Keystrokes.SequenceEqual(keystrokes)) {
-				FailMessage("That command is already bound.");
+				FailMessage("That sequence is already bound.");
 				return;
 			}
 		}
@@ -406,7 +406,7 @@ internal static class CommandManager {
 			if (binding.Keystrokes.SequenceEqual(keystrokes)) {
 				KeyBindings.RemoveAt(i);
 				Save();
-				FailMessage("Binding removed successfully.");
+				SuccessMessage("Binding removed successfully.");
 				return;
 			}
 		}
