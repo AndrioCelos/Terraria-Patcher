@@ -9,6 +9,7 @@ public class KeyBinding {
 	public string[] Arguments { get; private set; }
 
 	internal int progress;
+	internal bool canReset;
 
 	public KeyBinding(Keystroke stroke, string command, CommandAction? action, string[] parameters) : this(new Keystroke[] { stroke }, command, action, parameters) { }
 	public KeyBinding(Keystroke[] strokes, string command, CommandAction? action, string[] parameters) {

@@ -26,6 +26,7 @@ internal static class CommandManager {
 
 	private static List<Keys> currentKeys = new();
 	private static readonly List<Keys> currentKeys2 = new();
+	private static readonly List<Keys> newKeys = new();
 	private static List<Keys> prevCurrentKeys = new();
 	private static Keystroke.ModifierKeys currentModifiers;
 	private static float prevMusicVolume;
@@ -93,12 +94,12 @@ internal static class CommandManager {
 				var commandText = reader.ReadString();
 				Commands.TryGetValue(commandText, out var action);
 
-				var parameterCount = reader.ReadInt32();
-				var parameters = new string[parameterCount];
-				for (var j = 0; j < parameterCount; ++j)
-					parameters[j] = reader.ReadString();
+				var argCount = reader.ReadInt32();
+				var args = new string[argCount];
+				for (var j = 0; j < argCount; ++j)
+					args[j] = reader.ReadString();
 
-				KeyBindings.Add(new KeyBinding(strokes, commandText, action, parameters));
+				KeyBindings.Add(new KeyBinding(strokes, commandText, action, args));
 			}
 		}
 	}
@@ -137,8 +138,6 @@ internal static class CommandManager {
 	}
 
 	public static void HandleInput(IEnumerable<Keys> pressedKeys) {
-		var keystrokeUpdated = false;
-
 		currentKeys.Clear();
 		currentModifiers = 0;
 		foreach (var key in pressedKeys) {
@@ -151,30 +150,37 @@ internal static class CommandManager {
 					case Keys.LeftWindows: case Keys.RightWindows: currentModifiers |= Keystroke.ModifierKeys.Alt; break;
 				}
 			} else {
-				keystrokeUpdated = true;
+				newKeys.Add(key);
 			}
 			currentKeys.Add(key);
 		}
 
-		if (keystrokeUpdated) {
+		if (newKeys.Count != 0) {
+			newKeys.Sort();
 			currentKeys2.Clear();
-			currentKeys2.AddRange(currentKeys.Where((k, i) => i >= currentKeys.Count - 1 || k is not
+			currentKeys2.AddRange(prevCurrentKeys.Where(k => k is not
 				(Keys.LeftControl or Keys.RightControl or Keys.LeftShift or Keys.RightShift
 					or Keys.LeftAlt or Keys.RightAlt or Keys.LeftWindows or Keys.RightWindows)));
-			currentKeys2.Sort(0, currentKeys2.Count - 1, null);
+			currentKeys2.Sort();
+			currentKeys2.AddRange(newKeys);
 
-			var skipFirstKeystrokeBindings = false;
+			foreach (var binding in KeyBindings) binding.canReset = true;
+
+			var skipFirstKeystrokeBindings = false;  // Ctrl+A, Ctrl+B shouldn't also trigger Ctrl+B.
 			foreach (var binding in KeyBindings.Where(b => b.progress > 0)) {
 				if (binding.Keystrokes[binding.progress].Modifiers == currentModifiers &&
 					binding.Keystrokes[binding.progress].Keys.SequenceEqual(currentKeys2)) {
 					skipFirstKeystrokeBindings = true;
 					binding.progress++;
+					binding.canReset = false;
 					if (binding.progress == binding.Keystrokes.Length) {
-						binding.Action?.Invoke(binding.Arguments);
+						if (binding.Action is not null)
+							binding.Action.Invoke(binding.Arguments);
+						else
+							FailMessage($"Bound command '{binding.Command}' not found.");
 						binding.progress = 0;
 					}
-				} else
-					binding.progress = 0;
+				}
 			}
 
 			if (!skipFirstKeystrokeBindings) {
@@ -182,14 +188,27 @@ internal static class CommandManager {
 					if (binding.Keystrokes[0].Modifiers == currentModifiers &&
 						binding.Keystrokes[0].Keys.SequenceEqual(currentKeys2)) {
 						binding.progress++;
+						binding.canReset = false;
 						if (binding.progress == binding.Keystrokes.Length) {
-							binding.Action?.Invoke(binding.Arguments);
+							if (binding.Action is not null)
+								binding.Action.Invoke(binding.Arguments);
+							else
+								FailMessage($"Bound command '{binding.Command}' not found.");
 							binding.progress = 0;
 						}
-					} else
-						binding.progress = 0;
+					}
 				}
 			}
+
+			newKeys.Clear();
+		} else if (currentKeys.Count == 0 && prevCurrentKeys.Count != 0) {
+			foreach (var binding in KeyBindings) {
+				if (binding.canReset) {
+					binding.progress = 0;
+					binding.canReset = false;
+				}
+			}
+			prevCurrentKeys.Clear();
 		}
 
 		var swap = currentKeys;
