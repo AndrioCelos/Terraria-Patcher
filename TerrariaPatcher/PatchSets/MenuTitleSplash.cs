@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 
 using Terraria;
 using Terraria.GameContent;
+using Terraria.ID;
 using Terraria.UI.Chat;
 
 namespace TerrariaPatcher.PatchSets;
@@ -19,7 +20,7 @@ internal class MenuTitleSplash : PatchSet {
 	public override string Description => "Adds a title splash to the menu, for full screen or borderless window players.";
 
 	public static void DrawTitleSplash(string title) {
-		if (title is not null) {
+		if (title is not null && Main.menuMode == MenuID.Title) {
 			var size = FontAssets.MouseText.Value.MeasureString(title);
 			ChatManager.DrawColorCodedStringWithShadow(Main.spriteBatch, FontAssets.MouseText.Value, title, new(Main.screenWidth / 2, 200),
 				new Color(255, 240, 20) * ((float) Main.mouseTextColor / 255), 0, size / 2, new(1.5f, 1.5f));
