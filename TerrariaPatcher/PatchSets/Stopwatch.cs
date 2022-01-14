@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
+using Microsoft.Xna.Framework;
+
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
@@ -18,7 +20,7 @@ internal class Stopwatch : PatchSet {
 	public override string Name => "Stopwatch";
 	public override Version Version => new(1, 0);
 	public override string Description => "Use the stopwatch as an actual stopwatch with a client-side command.";
-	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
+	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories), typeof(Commands) };
 
 	internal static bool StopwatchShowing;
 	internal static bool StopwatchRunning;
@@ -26,15 +28,21 @@ internal class Stopwatch : PatchSet {
 	internal static int StopwatchSplitTime;
 	internal static int lastWorldID;
 
-	internal static string? GetDisplayString() {
+	internal static string? GetDisplayString(ref Color infoColour) {
 		if (StopwatchShowing) {
 			var time = StopwatchSplitTime != 0 ? StopwatchSplitTime : StopwatchTime;
 			var minutes = time / 3600;
 			var seconds = time / 60 % 60;
 			var cs = time % 60 * 5 / 3;
+
+			infoColour.R = (byte) (infoColour.R * ModManager.AccentColor.R / 255);
+			infoColour.G = (byte) (infoColour.G * ModManager.AccentColor.G / 255);
+			infoColour.B = (byte) (infoColour.B * ModManager.AccentColor.B / 255);
+			infoColour.A = (byte) (infoColour.A * ModManager.AccentColor.A / 255);
+			
 			return $"{minutes:00}' {seconds:00}.{cs:00}\"";
-		}
-		return null;
+		} else
+			return null;
 	}
 
 	internal class InitializePatch : MainInitializePatch {
@@ -122,10 +130,11 @@ internal class Stopwatch : PatchSet {
 							var local = instructions[j].GetLocal(method.Body.Variables);
 
 							// Now add our code.
-							instructions.Insert(i    , Call(Stopwatch.GetDisplayString));
-							instructions.Insert(i + 1, OpCodes.Stloc_S.ToInstruction(local));
-							instructions.Insert(i + 2, OpCodes.Ldloc_S.ToInstruction(local));
-							instructions.Insert(i + 3, OpCodes.Brtrue.ToInstruction(jumpInstruction));
+							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessories.InfoColourLocal));
+							instructions.Insert(i + 1, Call(Stopwatch.GetDisplayString));
+							instructions.Insert(i + 2, OpCodes.Stloc_S.ToInstruction(local));
+							instructions.Insert(i + 3, OpCodes.Ldloc_S.ToInstruction(local));
+							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
 
 							return;
 						}

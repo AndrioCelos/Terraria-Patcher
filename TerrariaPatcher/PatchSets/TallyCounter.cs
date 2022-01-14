@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
+using Microsoft.Xna.Framework;
+
 using Terraria;
 using Terraria.Audio;
 using Terraria.ID;
@@ -18,13 +20,21 @@ internal class TallyCounter : PatchSet {
 	public override string Name => "Tally Counter";
 	public override Version Version => new(1, 0);
 	public override string Description => "Use the tally counter as an actual counter with a client-side command.";
-	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
+	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories), typeof(Commands) };
 
 	internal static bool CounterShowing;
 	internal static int CounterCount;
 
-	internal static string? GetDisplayString()
-		=> CounterShowing ? $"Count: {CounterCount}" : null;
+	internal static string? GetDisplayString(ref Color infoColour) {
+		if (CounterShowing) {
+			infoColour.R = (byte) (infoColour.R * ModManager.AccentColor.R / 255);
+			infoColour.G = (byte) (infoColour.G * ModManager.AccentColor.G / 255);
+			infoColour.B = (byte) (infoColour.B * ModManager.AccentColor.B / 255);
+			infoColour.A = (byte) (infoColour.A * ModManager.AccentColor.A / 255);
+			return $"Count: {CounterCount}";
+		} else
+			return null;
+	}
 
 	internal class InitializePatch : MainInitializePatch {
 		public static void Prefix() => CommandManager.Commands.Add("counter", CommandCounter);
@@ -86,10 +96,11 @@ internal class TallyCounter : PatchSet {
 							var local = instructions[j - 1].GetLocal(method.Body.Variables);
 
 							// Now add our code.
-							instructions.Insert(i    , Call(TallyCounter.GetDisplayString));
-							instructions.Insert(i + 1, OpCodes.Stloc_S.ToInstruction(local));
-							instructions.Insert(i + 2, OpCodes.Ldloc_S.ToInstruction(local));
-							instructions.Insert(i + 3, new(OpCodes.Brtrue, jumpInstruction));
+							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessories.InfoColourLocal));
+							instructions.Insert(i + 1, Call(TallyCounter.GetDisplayString));
+							instructions.Insert(i + 2, OpCodes.Stloc_S.ToInstruction(local));
+							instructions.Insert(i + 3, OpCodes.Ldloc_S.ToInstruction(local));
+							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
 
 							return;
 						}
