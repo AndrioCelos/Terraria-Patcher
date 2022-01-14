@@ -16,7 +16,7 @@ namespace TerrariaPatcher.PatchSets;
 internal class PauseCommand : PatchSet {
 	public override string Name => "Pause Command";
 	public override Version Version => new(1, 0);
-	public override string Description => "Adds a client-side command to pause the game.";
+	public override string Description => "Adds a client command to pause the game.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
 
 	public static bool IsPaused;

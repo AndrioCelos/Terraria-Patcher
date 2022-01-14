@@ -102,6 +102,7 @@ internal static class Program {
 		AssignableWithBox = 2
 	}
 
+	/// <summary>Determines whether the source <see cref="TypeSig"/> is assignable to the target <see cref="TypeSig"/> and whether boxing is required.</summary>
 	internal static AssignabilityResult TypeIsAssignableTo(TypeSig source, TypeSig target) {
 		if (source.ElementType == ElementType.Void || target.ElementType == ElementType.Void)
 			return AssignabilityResult.NotAssignable;
@@ -176,7 +177,7 @@ internal static class Program {
 				return AssignabilityResult.NotAssignable;
 		}
 	}
-
+	/// <summary>Determines whether the specified generic type instance is assignable to the target <see cref="TypeSig"/>.</summary>
 	private static bool TypeIsAssignableTo(GenericInstSig source, TypeSig target) {
 		if (default(SigComparer).Equals(source, target)) return true;
 		var sourceDef = source.GenericType.TypeDefOrRef.ResolveTypeDefThrow();
@@ -187,6 +188,7 @@ internal static class Program {
 		}
 		return false;
 	}
+	/// <summary>Determines whether the specified type is assignable to the target <see cref="TypeSig"/>.</summary>
 	private static bool TypeIsAssignableTo(ITypeDefOrRef source, TypeSig target, IList<TypeSig>? genericArguments = null) {
 		if (source is TypeSpec typeSpec) {
 			if (genericArguments is not null && typeSpec.TypeSig is GenericInstSig genericInstSig) {

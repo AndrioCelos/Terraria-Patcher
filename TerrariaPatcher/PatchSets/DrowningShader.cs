@@ -14,7 +14,7 @@ namespace TerrariaPatcher.PatchSets;
 internal class DrowningShaderMod : PatchSet {
 	public override string Name => "Drowning RGB Lighting";
 	public override Version Version => new(1, 0);
-	public override string Description => "Changes the drowning shader gradient to horizontal instead of vertical.";
+	public override string Description => "Changes the drowning shader gradient to horizontal instead of vertical, for the Logitech G213 keyboard.";
 
 	internal class DrowningShaderPatch : Patch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(DrowningShader), "ProcessHighDetail");

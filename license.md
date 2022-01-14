@@ -1,8 +1,6 @@
 MIT License
 
-Copyright © 2022 Andrea Giannone
-
-Terraria is ©2021 Re-Logic.
+Copyright (c) 2022 Andrea Giannone
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -19,7 +19,7 @@ namespace TerrariaPatcher.PatchSets;
 internal class TallyCounter : PatchSet {
 	public override string Name => "Tally Counter";
 	public override Version Version => new(1, 0);
-	public override string Description => "Use the tally counter as an actual counter with a client-side command.";
+	public override string Description => "Use the tally counter as an actual counter with a client command.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories), typeof(Commands) };
 
 	internal static bool CounterShowing;

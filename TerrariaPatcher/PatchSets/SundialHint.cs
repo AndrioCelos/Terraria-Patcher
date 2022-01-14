@@ -14,7 +14,7 @@ internal class SundialHint : PatchSet {
 	public override string Name => "Sundial Hint";
 	public override Version Version => new(1, 0);
 	public override string Description => "Adds a message when clicking on an enchanted sundial during the cooldown in single player.";
-	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Mods) };
+	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(ModManagerMod) };
 
 	internal class SundialHintPatch : PrefixPatch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Player), "TileInteractionsUse");

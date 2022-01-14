@@ -33,7 +33,9 @@ internal static class Program {
 		}
 
 		// Extract ReLogic.dll.
-		if (!File.Exists(Path.Combine(directory, "ReLogic.dll"))) {
+		if (File.Exists(Path.Combine(directory, "ReLogic.dll")))
+			MessageBox.Show("ReLogic.dll already exists. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
+		else {
 			var assembly = Assembly.LoadFrom(Path.Combine(directory, "Terraria.exe"));
 			var inputStream = assembly.GetManifestResourceStream("Terraria.Libraries.ReLogic.ReLogic.dll") ?? throw new Exception("ReLogic.dll not found");
 			using var outputStream = File.OpenWrite(Path.Combine(directory, "ReLogic.dll"));
@@ -43,8 +45,8 @@ internal static class Program {
 				if (n == 0) break;
 				outputStream.Write(bytes, 0, n);
 			}
+			MessageBox.Show("Successfully extracted ReLogic.dll. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
-
 		return 0;
 	}
 

@@ -14,7 +14,7 @@ namespace TerrariaPatcher.PatchSets;
 internal class WorldInfo : PatchSet {
 	public override string Name => "World Info";
 	public override Version Version => new(1, 0);
-	public override string Description => "Shows world information upon entering and with a command.";
+	public override string Description => "Shows world information upon entering and with a client command.";
 	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Commands) };
 
 	private static int lastWorldID;

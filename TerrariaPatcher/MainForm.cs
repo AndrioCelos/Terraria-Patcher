@@ -34,6 +34,13 @@ public partial class MainForm : Form {
 			this.patchNameBox.Text = patchSet.Name ?? patchSet.Name;
 			this.patchVersionBox.Text = $"Ver. {patchSet.Version}; targets {patchSet.TargetModuleName}";
 			this.patchDescriptionBox.Text = patchSet.Description ?? "";
+
+			var entries = patchSet.GetCommands();
+			if (entries.Count != 0) {
+				var commandsString = string.Join("\r\n", entries.Select(e => $".{e.Key}{(string.IsNullOrEmpty(e.Value.ParametersHint) ? "" : " ")}{e.Value.ParametersHint} – {e.Value.Description}"));
+				commandsString = $"\r\n\r\nCommands:\r\n{commandsString}";
+				this.patchDescriptionBox.Text += commandsString;
+			}
 		}
 	}
 

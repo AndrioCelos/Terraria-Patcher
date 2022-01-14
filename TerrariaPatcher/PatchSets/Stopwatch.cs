@@ -19,7 +19,7 @@ namespace TerrariaPatcher.PatchSets;
 internal class Stopwatch : PatchSet {
 	public override string Name => "Stopwatch";
 	public override Version Version => new(1, 0);
-	public override string Description => "Use the stopwatch as an actual stopwatch with a client-side command.";
+	public override string Description => "Use the stopwatch as an actual stopwatch with client commands.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories), typeof(Commands) };
 
 	internal static bool StopwatchShowing;

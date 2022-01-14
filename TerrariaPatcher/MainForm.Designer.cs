@@ -161,7 +161,8 @@ partial class MainForm {
 			this.patchDescriptionBox.Multiline = true;
 			this.patchDescriptionBox.Name = "patchDescriptionBox";
 			this.patchDescriptionBox.ReadOnly = true;
-			this.patchDescriptionBox.Size = new System.Drawing.Size(195, 145);
+			this.patchDescriptionBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+			this.patchDescriptionBox.Size = new System.Drawing.Size(194, 145);
 			this.patchDescriptionBox.TabIndex = 1;
 			this.patchDescriptionBox.Text = "Patch description";
 			// 
@@ -175,7 +176,7 @@ partial class MainForm {
 			this.patchVersionBox.Multiline = true;
 			this.patchVersionBox.Name = "patchVersionBox";
 			this.patchVersionBox.ReadOnly = true;
-			this.patchVersionBox.Size = new System.Drawing.Size(195, 22);
+			this.patchVersionBox.Size = new System.Drawing.Size(194, 22);
 			this.patchVersionBox.TabIndex = 1;
 			this.patchVersionBox.Text = "Patch version";
 			// 
@@ -188,7 +189,7 @@ partial class MainForm {
 			this.patchNameBox.Location = new System.Drawing.Point(3, 3);
 			this.patchNameBox.Name = "patchNameBox";
 			this.patchNameBox.ReadOnly = true;
-			this.patchNameBox.Size = new System.Drawing.Size(195, 18);
+			this.patchNameBox.Size = new System.Drawing.Size(194, 18);
 			this.patchNameBox.TabIndex = 1;
 			this.patchNameBox.Text = "Patch name";
 			// 

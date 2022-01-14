@@ -11,7 +11,7 @@ namespace TerrariaPatcher.PatchSets;
 internal class AccessorySwitchCommands : PatchSet {
 	public override string Name => "Accessory Switch Commands";
 	public override Version Version => new(1, 0);
-	public override string Description => "Client-side commands to toggle accessory switches";
+	public override string Description => "Provides client-side commands to toggle accessory switches.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
 
 	internal class InitializePatch : MainInitializePatch {

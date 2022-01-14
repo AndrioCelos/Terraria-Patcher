@@ -22,7 +22,7 @@ internal class PlayerFileFilter : PatchSet {
 	public override string Name => "Player File Filter";
 	public override Version Version => new(1, 0);
 	public override string Description => "Filters the character list with the name of a Steam friend you are joining.";
-	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Mods) };
+	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(ModManagerMod) };
 
 	public static string? FilterString;
 
