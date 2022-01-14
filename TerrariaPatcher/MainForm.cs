@@ -78,13 +78,11 @@ public partial class MainForm : Form {
 		this.updatingSelectAll = true;
 		try {
 			if (e.NewValue == CheckState.Unchecked) {
-				var patches = Enumerable.Range(0, this.patchList.Items.Count)
-				.Where(i => i != e.Index && this.patchList.GetItemChecked(i) && (((PatchSet) this.patchList.Items[i]).Dependencies?.Contains(((PatchSet) this.patchList.Items[e.Index]).GetType()) ?? false))
-				.Select(i => (i, ((PatchSet) this.patchList.Items[i]).Name));
+				var patches = this.GetDependentIndices(e.Index).Where(i => this.patchList.GetItemChecked(i));
 				if (patches.Any()) {
-					if (MessageBox.Show(this, $"Deselecting this patch will also deselect the following dependent patches.\n\n{string.Join("\n", patches.Select(p => p.Name))}", "Terraria Patcher", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK) {
-						foreach (var en in patches) {
-							this.patchList.SetItemCheckState(en.i, CheckState.Unchecked);
+					if (MessageBox.Show(this, $"Deselecting this patch will also deselect the following dependent patches.\n\n{string.Join("\n", patches.Select(i => ((PatchSet) this.patchList.Items[i]).Name))}", "Terraria Patcher", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK) {
+						foreach (var i in patches) {
+							this.patchList.SetItemCheckState(i, CheckState.Unchecked);
 						}
 					} else {
 						e.NewValue = e.CurrentValue;
@@ -99,20 +97,15 @@ public partial class MainForm : Form {
 				}
 				this.selectAllBox.CheckState = CheckState.Unchecked;
 			} else {
-				var dependencies = ((PatchSet) this.patchList.Items[e.Index]).Dependencies;
-				if (dependencies is not null) {
-					var patches = Enumerable.Range(0, this.patchList.Items.Count)
-					.Where(i => !this.patchList.GetItemChecked(i) && dependencies.Contains(((PatchSet) this.patchList.Items[i]).GetType()))
-					.Select(i => (i, ((PatchSet) this.patchList.Items[i]).Name));
-					if (patches.Any()) {
-						if (MessageBox.Show(this, $"Selecting this patch will also select the following dependency patches.\n\n{string.Join("\n", patches.Select(p => p.Name))}", "Terraria Patcher", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK) {
-							foreach (var en in patches) {
-								this.patchList.SetItemCheckState(en.i, CheckState.Checked);
-							}
-						} else {
-							e.NewValue = e.CurrentValue;
-							return;
+				var patches = this.GetDependencyIndices(e.Index).Where(i => !this.patchList.GetItemChecked(i));
+				if (patches.Any()) {
+					if (MessageBox.Show(this, $"Selecting this patch will also select the following dependency patches.\n\n{string.Join("\n", patches.Select(i => ((PatchSet) this.patchList.Items[i]).Name))}", "Terraria Patcher", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK) {
+						foreach (var i in patches) {
+							this.patchList.SetItemCheckState(i, CheckState.Checked);
 						}
+					} else {
+						e.NewValue = e.CurrentValue;
+						return;
 					}
 				}
 				for (var i = 0; i < this.patchList.Items.Count; i++) {
@@ -126,6 +119,31 @@ public partial class MainForm : Form {
 		} finally {
 			this.updatingSelectAll = false;
 		}
+	}
+
+	private IEnumerable<int> GetDependencyIndices(int index) {
+		var indices = new List<int>();
+		int i = 0;
+		for (i = -1; i < indices.Count; i++) {
+			var dependencies = ((PatchSet) this.patchList.Items[i < 0 ? index : indices[i]]).Dependencies;
+			if (dependencies is not null)
+				indices.AddRange(Enumerable.Range(0, this.patchList.Items.Count)
+					.Where(j => j != index && !indices.Contains(j) && dependencies.Contains(this.patchList.Items[j].GetType())));
+		}
+		indices.Sort();
+		return indices;
+	}
+
+	private IEnumerable<int> GetDependentIndices(int index) {
+		var indices = new List<int>();
+		int i = 0;
+		for (i = -1; i < indices.Count; i++) {
+			var patchSet = this.patchList.Items[i < 0 ? index : indices[i]].GetType();
+			indices.AddRange(Enumerable.Range(0, this.patchList.Items.Count)
+				.Where(j => j != index && !indices.Contains(j) && (((PatchSet) this.patchList.Items[j]).Dependencies?.Contains(patchSet) ?? false)));
+		}
+		indices.Sort();
+		return indices;
 	}
 
 	private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
