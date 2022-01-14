@@ -91,6 +91,7 @@
     <Compile Include="PatchSets\ColouredMetalDetector.cs" />
     <Compile Include="PatchSets\Commands.cs" />
     <Compile Include="PatchSets\DungeonGuardianBossMusic.cs" />
+    <Compile Include="PatchSets\MenuTitleSplash.cs" />
     <Compile Include="PatchSets\WordWrapFix.cs" />
     <Compile Include="PatchSets\ItemSorting.cs" />
     <Compile Include="PatchSets\DrowningShader.cs" />
