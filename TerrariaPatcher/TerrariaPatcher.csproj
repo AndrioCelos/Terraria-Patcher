@@ -102,6 +102,7 @@
     <Compile Include="PatchSets\QuickHealShader.cs" />
     <Compile Include="PatchSets\RemoveSteam.cs" />
     <Compile Include="PatchSets\StackLimit.cs" />
+    <Compile Include="PatchSets\ColouredLifeformAnalyzer.cs" />
     <Compile Include="PatchSets\TallyCounter.cs" />
     <Compile Include="PatchSets\SundialHint.cs" />
     <Compile Include="PatchSets\Stopwatch.cs" />
