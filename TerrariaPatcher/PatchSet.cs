@@ -48,13 +48,16 @@ public abstract class PatchSet {
 	}
 
 	public void Apply(PatchProgressHandler? progressCallback) {
-		this.BeforeApply();
-
 		var targetModule = Program.GetTargetModule(this.TargetModuleName);
+		var copyPatchSetType = targetModule.ModuleDef.Types.FirstOrDefault(t => t.Namespace == this.GetType().Namespace && t.Name == this.GetType().Name);
+		if (copyPatchSetType is not null) return;  // Patch seems to have already been applied. Trying to apply it again would probably fail.
+
+		targetModule.Modified = true;
+		this.BeforeApply();
 		var patchSetTypeDef = targetModule.CurrentModuleDef.Import(this.GetType()).ResolveTypeDefThrow();
 
 		// Create a new type to copy patch set static members into, so that patches can call them.
-		var copyPatchSetType = new TypeDefUser(this.GetType().Namespace, this.GetType().Name, targetModule.ModuleDef.CorLibTypes.Object.TypeDefOrRef) {
+		copyPatchSetType = new TypeDefUser(this.GetType().Namespace, this.GetType().Name, targetModule.ModuleDef.CorLibTypes.Object.TypeDefOrRef) {
 			Attributes = TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed
 		};
 		targetModule.ModuleDef.Types.Add(copyPatchSetType);
@@ -113,7 +116,7 @@ public abstract class PatchSet {
 		this.AfterApply();
 	}
 
-	private void CopyStaticMembers(Type originalType, TypeDef originalTypeDef, TypeDefUser copyTypeDef) {
+	private void CopyStaticMembers(Type originalType, TypeDef originalTypeDef, TypeDef copyTypeDef) {
 		foreach (var type in originalType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
 			if (type.GetCustomAttribute<NoCopyToTargetAttribute>() is null
 				&& !typeof(Patch).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type))
