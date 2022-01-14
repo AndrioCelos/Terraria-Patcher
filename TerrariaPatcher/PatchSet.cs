@@ -90,7 +90,7 @@ public abstract class PatchSet {
 			}
 
 			// Copy static members and nested types from the patch type.
-			this.CopyStaticMembers(patchTypeDef, copyPatchType);
+			this.CopyStaticMembers(patch.GetType(), patchTypeDef, copyPatchType);
 
 			patch.currentPatchTargetModule = null;
 			patch.currentPatchSetType = null;
@@ -98,7 +98,7 @@ public abstract class PatchSet {
 		}
 
 		// Copy static members and nested types from the patch set type.
-		this.CopyStaticMembers(patchSetTypeDef, copyPatchSetType);
+		this.CopyStaticMembers(this.GetType(), patchSetTypeDef, copyPatchSetType);
 
 		// Copy compiler-generated types.
 		if (typeof(Program).Assembly.GetType("System.Runtime.CompilerServices.NullableAttribute") is Type t1)
@@ -113,8 +113,8 @@ public abstract class PatchSet {
 		this.AfterApply();
 	}
 
-	private void CopyStaticMembers(TypeDef originalTypeDef, TypeDefUser copyTypeDef) {
-		foreach (var type in this.GetType().GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
+	private void CopyStaticMembers(Type originalType, TypeDef originalTypeDef, TypeDefUser copyTypeDef) {
+		foreach (var type in originalType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
 			if (type.GetCustomAttribute<NoCopyToTargetAttribute>() is null
 				&& !typeof(Patch).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type))
 				// Skip MethodDef iterator types.

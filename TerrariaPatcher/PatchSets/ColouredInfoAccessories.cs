@@ -33,12 +33,22 @@ internal class ColouredInfoAccessories : PatchSet {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "DrawInfoAccs");
 
 		public override void PatchMethodBody(MethodDef method) {
+			// Replace `color2 = new Color(mouseTextColor, mouseTextColor, mouseTextColor, mouseTextColor)` with `colour2 = infoColour`
+			// and give the existing initialiser to infoColour before `text2 = ""`.
 			var infoColourLocal = InfoColourLocal;
 			method.Body.Variables.Add(infoColourLocal);
-			var pos = method.Body.Instructions[1].Is(Code.Brfalse) ? 2 : 0;
 
-			// Replace `color2 = new Color(mouseTextColor, mouseTextColor, mouseTextColor, mouseTextColor)` with `colour2 = infoColour`
-			// and give the existing initialiser to infoColour.
+			int pos;
+			for (pos = 0; pos < method.Body.Instructions.Count; pos++) {
+				if (method.Body.Instructions[pos].IsBr()) break;
+			}
+			for (pos++; pos < method.Body.Instructions.Count; pos++) {
+				if (method.Body.Instructions[pos].IsConstant("")) {
+					pos += 4;  // The initialiser will be inserted after the two empty string ones.
+					break;
+				}
+			}
+
 			var instructions = method.Body.Instructions;
 			for (int i = 5; i < instructions.Count; i++) {
 				if (instructions[i - 1].Is(Code.Ldsfld) && ((IField) instructions[i - 1].Operand).Name == nameof(Main.mouseTextColor)
