@@ -90,24 +90,7 @@ public abstract class PatchSet {
 			}
 
 			// Copy static members and nested types from the patch type.
-			foreach (var type in patch.GetType().GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
-				if (!typeof(IEnumerable<MethodDef>).IsAssignableFrom(type)) {
-					// Skip MethodDef iterator types.
-					patchTypeDef.Module.Import(type).ResolveTypeDefThrow().DeclaringType = copyPatchType;
-				}
-			}
-			foreach (var property in patchTypeDef.Properties.Where(f => (f.GetMethod ?? f.SetMethod).IsStatic).ToList()) {
-				property.DeclaringType = copyPatchType;
-			}
-			foreach (var ev in patchTypeDef.Events.Where(f => (f.AddMethod ?? f.RemoveMethod ?? f.InvokeMethod).IsStatic).ToList()) {
-				ev.DeclaringType = copyPatchType;
-			}
-			foreach (var field in patchTypeDef.Fields.Where(f => f.IsStatic).ToList()) {
-				field.DeclaringType = copyPatchType;
-			}
-			foreach (var method in patchTypeDef.Methods.Where(f => f.IsStatic).ToList()) {
-				method.DeclaringType = copyPatchType;
-			}
+			this.CopyStaticMembers(patchTypeDef, copyPatchType);
 
 			patch.currentPatchTargetModule = null;
 			patch.currentPatchSetType = null;
@@ -115,51 +98,7 @@ public abstract class PatchSet {
 		}
 
 		// Copy static members and nested types from the patch set type.
-		foreach (var type in this.GetType().GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
-			.Where(t => !typeof(Patch).IsAssignableFrom(t))) {
-			patchSetTypeDef.Module.Import(type).ResolveTypeDefThrow().DeclaringType = copyPatchSetType;
-		}
-		foreach (var property in patchSetTypeDef.Properties.Where(f => (f.GetMethod ?? f.SetMethod).IsStatic).ToList()) {
-			property.DeclaringType = copyPatchSetType;
-		}
-		foreach (var ev in patchSetTypeDef.Events.Where(f => (f.AddMethod ?? f.RemoveMethod ?? f.InvokeMethod).IsStatic).ToList()) {
-			ev.DeclaringType = copyPatchSetType;
-		}
-		foreach (var field in patchSetTypeDef.Fields.ToList()) {
-			var attributeDef = field.CustomAttributes.FirstOrDefault(a => a.TypeFullName == typeof(ReversePatchAttribute).FullName);
-			if (attributeDef is not null) {
-				if (!field.IsStatic) throw new InvalidOperationException("Reverse patch field must be static.");
-				field.DeclaringType = copyPatchSetType;
-				field.CustomAttributes.Remove(attributeDef);
-
-				var targetMethod = this.GetType().GetField(field.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-					.GetCustomAttribute<ReversePatchAttribute>().PatchTarget.GetMethodDefs().Single();
-
-				// Change the target method to at least internal access if necessary.
-				if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private)
-					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.Assembly;
-				else if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamANDAssem)
-					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.Assembly;
-				else if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Family)
-					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.FamORAssem;
-
-				var delegateConstructorRef = new MemberRefUser(targetModule.ModuleDef, ".ctor",
-					MethodSig.CreateInstance(targetModule.ModuleDef.CorLibTypes.Void, targetModule.ModuleDef.CorLibTypes.Object, targetModule.ModuleDef.CorLibTypes.IntPtr),
-					new TypeSpecUser(field.FieldType));
-
-				// Add code to the static constructor to set the field.
-				var staticConstructor = copyPatchSetType.FindOrCreateStaticConstructor();
-				var instructions = staticConstructor.Body.Instructions;
-				instructions.Insert(instructions.Count - 1, OpCodes.Ldnull.ToInstruction());
-				instructions.Insert(instructions.Count - 1, OpCodes.Ldftn.ToInstruction(targetMethod));
-				instructions.Insert(instructions.Count - 1, OpCodes.Newobj.ToInstruction(delegateConstructorRef));
-				instructions.Insert(instructions.Count - 1, OpCodes.Stsfld.ToInstruction(field));
-			} else if (field.IsStatic)
-				field.DeclaringType = copyPatchSetType;
-		}
-		foreach (var method in patchSetTypeDef.Methods.Where(f => f.IsStatic).ToList()) {
-			method.DeclaringType = copyPatchSetType;
-		}
+		this.CopyStaticMembers(patchSetTypeDef, copyPatchSetType);
 
 		// Copy compiler-generated types.
 		if (typeof(Program).Assembly.GetType("System.Runtime.CompilerServices.NullableAttribute") is Type t1)
@@ -173,6 +112,62 @@ public abstract class PatchSet {
 
 		this.AfterApply();
 	}
+
+	private void CopyStaticMembers(TypeDef originalTypeDef, TypeDefUser copyTypeDef) {
+		foreach (var type in this.GetType().GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
+			if (type.GetCustomAttribute<NoCopyToTargetAttribute>() is null
+				&& !typeof(Patch).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type))
+				// Skip MethodDef iterator types.
+				originalTypeDef.Module.Import(type).ResolveTypeDefThrow().DeclaringType = copyTypeDef;
+		}
+		foreach (var property in originalTypeDef.Properties.Where(p => (p.GetMethod ?? p.SetMethod).IsStatic
+			&& GetCustomAttribute(p.CustomAttributes, typeof(NoCopyToTargetAttribute)) is null).ToList()) {
+			property.DeclaringType = copyTypeDef;
+		}
+		foreach (var ev in originalTypeDef.Events.Where(ev => (ev.AddMethod ?? ev.RemoveMethod ?? ev.InvokeMethod).IsStatic
+			&& GetCustomAttribute(ev.CustomAttributes, typeof(NoCopyToTargetAttribute)) is null).ToList()) {
+			ev.DeclaringType = copyTypeDef;
+		}
+		foreach (var field in originalTypeDef.Fields.ToList()) {
+			var attributeDef = GetCustomAttribute(field.CustomAttributes, typeof(ReversePatchAttribute));
+			if (attributeDef is not null) {
+				if (!field.IsStatic) throw new InvalidOperationException("Reverse patch field must be static.");
+				field.DeclaringType = copyTypeDef;
+				field.CustomAttributes.Remove(attributeDef);
+
+				var targetMethod = this.GetType().GetField(field.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+					.GetCustomAttribute<ReversePatchAttribute>().PatchTarget.GetMethodDefs().Single();
+
+				// Change the target method to at least internal access if necessary.
+				if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private)
+					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.Assembly;
+				else if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamANDAssem)
+					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.Assembly;
+				else if ((targetMethod.Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Family)
+					targetMethod.Attributes = (targetMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.FamORAssem;
+
+				var delegateConstructorRef = new MemberRefUser(copyTypeDef.Module, ".ctor",
+					MethodSig.CreateInstance(copyTypeDef.Module.CorLibTypes.Void, copyTypeDef.Module.CorLibTypes.Object, copyTypeDef.Module.CorLibTypes.IntPtr),
+					new TypeSpecUser(field.FieldType));
+
+				// Add code to the static constructor to set the field.
+				var staticConstructor = copyTypeDef.FindOrCreateStaticConstructor();
+				var instructions = staticConstructor.Body.Instructions;
+				instructions.Insert(instructions.Count - 1, OpCodes.Ldnull.ToInstruction());
+				instructions.Insert(instructions.Count - 1, OpCodes.Ldftn.ToInstruction(targetMethod));
+				instructions.Insert(instructions.Count - 1, OpCodes.Newobj.ToInstruction(delegateConstructorRef));
+				instructions.Insert(instructions.Count - 1, OpCodes.Stsfld.ToInstruction(field));
+			} else if (field.IsStatic && GetCustomAttribute(field.CustomAttributes, typeof(NoCopyToTargetAttribute)) is null)
+				field.DeclaringType = copyTypeDef;
+		}
+		foreach (var method in originalTypeDef.Methods
+			.Where(m => m.IsStatic && GetCustomAttribute(m.CustomAttributes, typeof(NoCopyToTargetAttribute)) is null).ToList()) {
+			method.DeclaringType = copyTypeDef;
+		}
+	}
+
+	private static CustomAttribute? GetCustomAttribute(CustomAttributeCollection attributes, Type type)
+		=> attributes.FirstOrDefault(a => a.TypeFullName == type.FullName);
 }
 
 public delegate void PatchProgressHandler(int patchesApplied, string patchName);

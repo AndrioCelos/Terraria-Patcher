@@ -80,6 +80,7 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Mods\ModManager.cs" />
+    <Compile Include="NoCopyToTargetAttribute.cs" />
     <Compile Include="Patch.cs" />
     <Compile Include="PatchSet.cs" />
     <Compile Include="PatchSets\AccessorySwitchCommands.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="PatchSets\TallyCounter.cs" />
     <Compile Include="PatchSets\SundialHint.cs" />
     <Compile Include="PatchSets\Stopwatch.cs" />
+    <Compile Include="PatchSets\ColouredInfoAccessories.cs" />
     <Compile Include="PatchSets\Watch24Hour.cs" />
     <Compile Include="PatchSets\WorldInfo.cs" />
     <Compile Include="PatchTarget.cs" />
