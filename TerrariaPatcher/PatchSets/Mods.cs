@@ -2,6 +2,8 @@
 
 using System;
 
+using Terraria;
+
 using TerrariaPatcher.Mods;
 
 namespace TerrariaPatcher.PatchSets;
@@ -13,9 +15,5 @@ internal class Mods : PatchSet {
 
 	public override void BeforeApply() {
 		ImportType(typeof(ModManager), "Terraria");
-	}
-
-	internal class InitializePatch : MainInitializePatch {
-		public static void Postfix() => ModManager.Initialise();
 	}
 }

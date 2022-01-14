@@ -15,7 +15,7 @@ internal class AccessorySwitchCommands : PatchSet {
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
 
 	internal class InitializePatch : MainInitializePatch {
-		public static void Postfix() {
+		public static void Prefix() {
 			CommandManager.Commands.Add("hotbar", CommandHotbar);
 
 			CommandManager.Commands.Add("ruler", GetAccessorySwitchCommand(0, "on", "off"));

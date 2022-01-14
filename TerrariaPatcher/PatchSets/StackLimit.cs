@@ -25,8 +25,8 @@ internal class StackLimitMod : PatchSet {
 	public static int StackLimit = int.MaxValue;
 
 	internal class InitializePatch : MainInitializePatch {
-		public static void Postfix() {
-			CommandManager.Commands.Add("stack", args => {
+		public static void Prefix()
+			=> CommandManager.Commands.Add("stack", args => {
 				if (args.Length == 0) {
 					StackLimit = int.MaxValue;
 					return;
@@ -36,7 +36,6 @@ internal class StackLimitMod : PatchSet {
 				else
 					Main.NewText("Usage: .stack <number>", 147, 112, 219);
 			});
-		}
 	}
 
 	internal class LeftClickPatch : Patch {

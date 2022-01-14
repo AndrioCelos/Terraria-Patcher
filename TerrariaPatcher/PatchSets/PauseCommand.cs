@@ -22,7 +22,7 @@ internal class PauseCommand : PatchSet {
 	public static bool IsPaused;
 
 	internal class InitializePatch : MainInitializePatch {
-		public static void Postfix() {
+		public static void Prefix() {
 			CommandManager.Commands.Add("pause", args => {
 				if (Main.netMode != 0) {
 					Main.NewText("You can't pause in multiplayer.", 192, 64, 64);

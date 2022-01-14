@@ -417,6 +417,12 @@ public abstract class PrefixPatch : Patch {
 	}
 }
 
+/// <summary>A <see cref="PrefixPatch"/> that runs when the game is initialising.</summary>
+/// <remarks>
+///		Implementers should use the <c>Prefix</c> method for initialising their own state,
+///		and <c>Postfix</c> for initialisation that depends on other mods.
+///	</remarks>
 public abstract class MainInitializePatch : PrefixPatch {
-	public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "Initialize");
+	protected override bool PostfixIsOptional => true;
+	public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "ClientInitialize");
 }

@@ -30,7 +30,8 @@ internal class Commands : PatchSet {
 	}
 
 	internal class InitializePatch : MainInitializePatch {
-		public static void Postfix() => CommandManager.Initialise();
+		public static void Prefix() => CommandManager.Initialise();
+		public static void Postfix() => CommandManager.InitialisePost();
 	}
 
 	internal class DoUpdateEnterToggleChatPatch : Patch {

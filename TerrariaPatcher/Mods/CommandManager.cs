@@ -22,8 +22,6 @@ internal static class CommandManager {
 	public static List<KeyBinding> KeyBindings { get; } = new();
 	public static SortedDictionary<string, CommandAction> Commands { get; } = new(StringComparer.CurrentCultureIgnoreCase);
 
-	public static event EventHandler? Initialising;
-
 	private static List<Keys> currentKeys = new();
 	private static readonly List<Keys> currentKeys2 = new();
 	private static readonly List<Keys> newKeys = new();
@@ -31,7 +29,12 @@ internal static class CommandManager {
 	private static Keystroke.ModifierKeys currentModifiers;
 	private static float prevMusicVolume;
 
-	static CommandManager() {
+	public static void Message(string s) => Message(s, ModManager.AccentColor);
+	public static void Message(string s, Color color) => Main.NewText(s, color.R, color.G, color.B);
+	public static void SuccessMessage(string s) => Message(s, ModManager.SuccessColor);
+	public static void FailMessage(string s) => Message(s, ModManager.FailColor);
+
+	public static void Initialise() {
 		Commands.Add("help", CommandHelp);
 		Commands.Add("music", CommandMusic);
 		Commands.Add("say", CommandSay);
@@ -41,16 +44,7 @@ internal static class CommandManager {
 		Commands.Add("unbind", CommandUnbind);
 		Commands.Add("listbindings", CommandListBindings);
 	}
-
-	public static void Message(string s) => Message(s, ModManager.AccentColor);
-	public static void Message(string s, Color color) => Main.NewText(s, color.R, color.G, color.B);
-	public static void SuccessMessage(string s) => Message(s, ModManager.SuccessColor);
-	public static void FailMessage(string s) => Message(s, ModManager.FailColor);
-
-	public static void Initialise() {
-		Initialising?.Invoke(null, EventArgs.Empty);
-		Load();
-	}
+	public static void InitialisePost() => Load();
 
 	public static void Save() {
 		using var fileStream = new FileStream(Path.Combine(Main.SavePath, "commands.dat"), FileMode.Create);

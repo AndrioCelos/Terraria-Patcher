@@ -20,7 +20,7 @@ internal class WorldInfo : PatchSet {
 	private static int lastWorldID;
 
 	internal class InitializePatch : MainInitializePatch {
-		public static void Postfix() {
+		public static void Prefix() {
 			CommandManager.Commands.Add("world", args => ShowWorldInfo(false));
 			Player.Hooks.OnEnterWorld += p => {
 				if (Main.worldID != lastWorldID) {
