@@ -12,6 +12,7 @@ namespace TerrariaPatcher;
 internal class TargetModule {
 	public string InputPath { get; }
 	public string OutputPath { get; set; }
+	public bool Modified { get; set; }
 
 	public ModuleDef ModuleDef => this.moduleDef ?? throw new InvalidOperationException("Module has not been loaded yet.");
 
@@ -28,11 +29,10 @@ internal class TargetModule {
 		this.OutputPath = outputPath ?? throw new ArgumentNullException(nameof(outputPath));
 	}
 
-	public void Load(IAssemblyResolver assemblyResolver) {
-		if (!File.Exists(this.InputPath))
-			File.Move(this.OutputPath, this.InputPath);
-		this.moduleDef = ModuleDefMD.Load(this.InputPath, new ModuleContext(assemblyResolver));
-		this.currentModuleDef = ModuleDefMD.Load(typeof(Program).Module, new ModuleContext(assemblyResolver));
+	public void Load() {
+		this.moduleDef = ModuleDefMD.Load(this.InputPath, new ModuleContext(Program.AssemblyResolver));
+		this.currentModuleDef = ModuleDefMD.Load(typeof(Program).Module, new ModuleContext(Program.AssemblyResolver));
+		this.AddedTypes.Clear();
 	}
 
 	public void Write() => this.ModuleDef.Write(this.OutputPath);

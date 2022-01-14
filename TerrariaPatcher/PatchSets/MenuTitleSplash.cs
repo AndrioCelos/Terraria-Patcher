@@ -1,14 +1,11 @@
 ﻿#nullable enable
 
 using System;
-using System.Collections.Generic;
 
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 using Microsoft.Xna.Framework;
-
-using ReLogic.Graphics;
 
 using Terraria;
 using Terraria.GameContent;

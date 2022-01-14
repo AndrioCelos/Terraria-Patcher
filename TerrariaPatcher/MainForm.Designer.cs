@@ -26,16 +26,16 @@ partial class MainForm {
 	private void InitializeComponent() {
 			this.patchList = new System.Windows.Forms.CheckedListBox();
 			this.selectAllBox = new System.Windows.Forms.CheckBox();
-			this.okButton = new System.Windows.Forms.Button();
+			this.patchButton = new System.Windows.Forms.Button();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.statusLabel = new System.Windows.Forms.Label();
 			this.progressBar = new System.Windows.Forms.ProgressBar();
+			this.runButton = new System.Windows.Forms.Button();
 			this.splitContainer1 = new System.Windows.Forms.SplitContainer();
 			this.patchDescriptionBox = new System.Windows.Forms.TextBox();
 			this.patchVersionBox = new System.Windows.Forms.TextBox();
 			this.patchNameBox = new System.Windows.Forms.TextBox();
 			this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
-			this.button1 = new System.Windows.Forms.Button();
 			this.panel1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
@@ -57,7 +57,6 @@ partial class MainForm {
 			this.patchList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.patchList_ItemCheck);
 			this.patchList.SelectedIndexChanged += new System.EventHandler(this.patchList_SelectedIndexChanged);
 			this.patchList.Format += new System.Windows.Forms.ListControlConvertEventHandler(this.patchList_Format);
-			this.patchList.SelectedValueChanged += new System.EventHandler(this.patchList_SelectedValueChanged);
 			// 
 			// selectAllBox
 			// 
@@ -72,24 +71,24 @@ partial class MainForm {
 			this.selectAllBox.UseVisualStyleBackColor = true;
 			this.selectAllBox.CheckedChanged += new System.EventHandler(this.selectAllBox_CheckedChanged);
 			// 
-			// okButton
+			// patchButton
 			// 
-			this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.okButton.Location = new System.Drawing.Point(370, 2);
-			this.okButton.Margin = new System.Windows.Forms.Padding(4);
-			this.okButton.Name = "okButton";
-			this.okButton.Size = new System.Drawing.Size(80, 30);
-			this.okButton.TabIndex = 2;
-			this.okButton.Text = "&Patch";
-			this.okButton.UseVisualStyleBackColor = true;
-			this.okButton.Click += new System.EventHandler(this.button1_Click);
+			this.patchButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.patchButton.Location = new System.Drawing.Point(370, 2);
+			this.patchButton.Margin = new System.Windows.Forms.Padding(4);
+			this.patchButton.Name = "patchButton";
+			this.patchButton.Size = new System.Drawing.Size(80, 30);
+			this.patchButton.TabIndex = 2;
+			this.patchButton.Text = "&Patch";
+			this.patchButton.UseVisualStyleBackColor = true;
+			this.patchButton.Click += new System.EventHandler(this.patchButton_Click);
 			// 
 			// panel1
 			// 
 			this.panel1.Controls.Add(this.statusLabel);
 			this.panel1.Controls.Add(this.progressBar);
-			this.panel1.Controls.Add(this.button1);
-			this.panel1.Controls.Add(this.okButton);
+			this.panel1.Controls.Add(this.runButton);
+			this.panel1.Controls.Add(this.patchButton);
 			this.panel1.Controls.Add(this.selectAllBox);
 			this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
 			this.panel1.Location = new System.Drawing.Point(0, 198);
@@ -118,6 +117,18 @@ partial class MainForm {
 			this.progressBar.Size = new System.Drawing.Size(445, 23);
 			this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
 			this.progressBar.TabIndex = 4;
+			// 
+			// runButton
+			// 
+			this.runButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.runButton.Location = new System.Drawing.Point(282, 2);
+			this.runButton.Margin = new System.Windows.Forms.Padding(4);
+			this.runButton.Name = "runButton";
+			this.runButton.Size = new System.Drawing.Size(80, 30);
+			this.runButton.TabIndex = 2;
+			this.runButton.Text = "&Run";
+			this.runButton.UseVisualStyleBackColor = true;
+			this.runButton.Click += new System.EventHandler(this.runButton_Click);
 			// 
 			// splitContainer1
 			// 
@@ -150,7 +161,7 @@ partial class MainForm {
 			this.patchDescriptionBox.Multiline = true;
 			this.patchDescriptionBox.Name = "patchDescriptionBox";
 			this.patchDescriptionBox.ReadOnly = true;
-			this.patchDescriptionBox.Size = new System.Drawing.Size(198, 145);
+			this.patchDescriptionBox.Size = new System.Drawing.Size(195, 145);
 			this.patchDescriptionBox.TabIndex = 1;
 			this.patchDescriptionBox.Text = "Patch description";
 			// 
@@ -164,7 +175,7 @@ partial class MainForm {
 			this.patchVersionBox.Multiline = true;
 			this.patchVersionBox.Name = "patchVersionBox";
 			this.patchVersionBox.ReadOnly = true;
-			this.patchVersionBox.Size = new System.Drawing.Size(198, 22);
+			this.patchVersionBox.Size = new System.Drawing.Size(195, 22);
 			this.patchVersionBox.TabIndex = 1;
 			this.patchVersionBox.Text = "Patch version";
 			// 
@@ -177,7 +188,7 @@ partial class MainForm {
 			this.patchNameBox.Location = new System.Drawing.Point(3, 3);
 			this.patchNameBox.Name = "patchNameBox";
 			this.patchNameBox.ReadOnly = true;
-			this.patchNameBox.Size = new System.Drawing.Size(198, 18);
+			this.patchNameBox.Size = new System.Drawing.Size(195, 18);
 			this.patchNameBox.TabIndex = 1;
 			this.patchNameBox.Text = "Patch name";
 			// 
@@ -188,21 +199,9 @@ partial class MainForm {
 			this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker_ProgressChanged);
 			this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
 			// 
-			// button1
-			// 
-			this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.button1.Location = new System.Drawing.Point(282, 2);
-			this.button1.Margin = new System.Windows.Forms.Padding(4);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(80, 30);
-			this.button1.TabIndex = 2;
-			this.button1.Text = "&Run";
-			this.button1.UseVisualStyleBackColor = true;
-			this.button1.Click += new System.EventHandler(this.button1_Click_1);
-			// 
 			// MainForm
 			// 
-			this.AcceptButton = this.okButton;
+			this.AcceptButton = this.patchButton;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(454, 277);
@@ -212,6 +211,7 @@ partial class MainForm {
 			this.Margin = new System.Windows.Forms.Padding(4);
 			this.Name = "MainForm";
 			this.Text = "Terraria Patcher";
+			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
 			this.splitContainer1.Panel1.ResumeLayout(false);
@@ -227,7 +227,7 @@ partial class MainForm {
 
 	private System.Windows.Forms.CheckedListBox patchList;
 	private System.Windows.Forms.CheckBox selectAllBox;
-	private System.Windows.Forms.Button okButton;
+	private System.Windows.Forms.Button patchButton;
 	private System.Windows.Forms.Panel panel1;
 	private System.Windows.Forms.SplitContainer splitContainer1;
 	private System.Windows.Forms.TextBox patchDescriptionBox;
@@ -236,5 +236,5 @@ partial class MainForm {
 	private System.Windows.Forms.ProgressBar progressBar;
 	private System.ComponentModel.BackgroundWorker backgroundWorker;
 	private System.Windows.Forms.TextBox patchVersionBox;
-	private System.Windows.Forms.Button button1;
+	private System.Windows.Forms.Button runButton;
 }

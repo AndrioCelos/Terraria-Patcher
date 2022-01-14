@@ -9,28 +9,44 @@ using System.Windows.Forms;
 
 using dnlib.DotNet;
 
+using Microsoft.Win32;
+
 namespace TerrariaPatcher;
 
 internal static class Program {
 	internal const bool SKIP_ORIGINAL = false;
 	internal const bool DONT_SKIP_ORIGINAL = true;
 
-	//internal static ModuleDef? CurrentModule { get; private set; }
-	internal static TargetModule[]? TargetModules { get; private set; }
+	internal static AssemblyResolver AssemblyResolver { get; } = new();
+	internal static TargetModule[] TargetModules { get; private set; } = Array.Empty<TargetModule>();
 
 	/// <summary>
 	///  The main entry point for the application.
 	/// </summary>
 	[STAThread]
-	static void Main() {
-		var assemblyResolver = new AssemblyResolver();
-		//CurrentModule = ModuleDefMD.Load(typeof(Program).Module, new ModuleContext(assemblyResolver));
+	static int Main(string[] args) {
+		Application.EnableVisualStyles();
+		Application.SetCompatibleTextRenderingDefault(false);
 
-		// Extract ReLogic.dll
-		if (!File.Exists(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\ReLogic.dll")) {
-			var assembly = Assembly.LoadFrom(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\Terraria.exe");
+		string directory;
+		if (args.Length > 0 && Directory.Exists(args[0]))
+			directory = args[0];
+		else if (Environment.OSVersion.Platform == PlatformID.Win32NT && GetTerrariaDirectoryFromRegistry() is string path)
+			directory = path;
+		else if (Directory.Exists(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria"))
+			directory = @"C:\Program Files (x86)\Steam\steamapps\common\Terraria";
+		else {
+			var openFileDialog = new OpenFileDialog() { Title = "Please locate your Terraria installation", Filter = "Terraria.exe|Terraria.exe" };
+			if (openFileDialog.ShowDialog() != DialogResult.OK)
+				return 1;
+			directory = Path.GetDirectoryName(openFileDialog.FileName);
+		}
+
+		// Extract ReLogic.dll.
+		if (!File.Exists(Path.Combine(directory, "ReLogic.dll"))) {
+			var assembly = Assembly.LoadFrom(Path.Combine(directory, "Terraria.exe"));
 			var inputStream = assembly.GetManifestResourceStream("Terraria.Libraries.ReLogic.ReLogic.dll") ?? throw new Exception("ReLogic.dll not found");
-			using var outputStream = File.OpenWrite(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\ReLogic.dll");
+			using var outputStream = File.OpenWrite(Path.Combine(directory, "ReLogic.dll"));
 			var bytes = new byte[4096];
 			while (true) {
 				var n = inputStream.Read(bytes, 0, bytes.Length);
@@ -40,10 +56,8 @@ internal static class Program {
 		}
 
 		TargetModules = new TargetModule[] {
-			new(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\Terraria.exe",
-				@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\Terraria.patched.exe"),
-			new(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\ReLogic.dll",
-				@"C:\Program Files (x86)\Steam\steamapps\common\Terraria\ReLogic.patched.dll")
+			new(Path.Combine(directory, "Terraria.exe"), Path.Combine(directory, "Terraria.patched.exe")),
+			new(Path.Combine(directory, "ReLogic.dll"), Path.Combine(directory, "ReLogic.patched.dll"))
 		};
 
 		AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
@@ -51,21 +65,15 @@ internal static class Program {
 		var patchSets = Assembly.GetExecutingAssembly().DefinedTypes.Where(t => t.BaseType == typeof(PatchSet))
 			.Select(t => (PatchSet) Activator.CreateInstance(t));
 
-		/*
-		TargetModules = new TargetModule[] {
-			new(@"C:\Users\Andrea\source\repos\Test\TestFramework\bin\Release\TestFramework.exe",
-				@"C:\Users\Andrea\source\repos\Test\TestFramework\bin\Release\TestFramework.patched.exe")
-		};
-		*/
-		foreach (var targetModule in TargetModules) {
-			targetModule.Load(assemblyResolver);
-		}
-
-		Application.EnableVisualStyles();
-		Application.SetCompatibleTextRenderingDefault(false);
-
 		var mainForm = new MainForm(patchSets);
 		Application.Run(mainForm);
+		return 0;
+	}
+
+	private static string? GetTerrariaDirectoryFromRegistry() {
+		using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+		using var subKey = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 105600");
+		return subKey?.GetValue("InstallLocation") as string;
 	}
 
 	private static Assembly? CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
