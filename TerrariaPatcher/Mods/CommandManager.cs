@@ -108,7 +108,7 @@ internal static class CommandManager {
 						if (c == '"') break;
 						builder.Append(char.ToLower(c));
 					}
-				} else if (char.IsWhiteSpace(c) && (command is null || args.Count >= command.MaxParameters - 1))
+				} else if (char.IsWhiteSpace(c) && (command is null || args.Count < command.MaxParameters - 1))
 					break;
 				else
 					builder.Append(c);
