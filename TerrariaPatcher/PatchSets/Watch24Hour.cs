@@ -9,7 +9,7 @@ using Terraria;
 namespace TerrariaPatcher.PatchSets;
 
 internal class Watch24Hour : PatchSet {
-	public override string Name => "24-hour Clocks";
+	public override string Name => "24-Hour Watch";
 	public override Version Version => new(1, 0);
 	public override string Description => "Changes the watch accessory info display to 24-hour time.";
 
