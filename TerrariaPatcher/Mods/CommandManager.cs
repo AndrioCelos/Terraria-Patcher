@@ -28,8 +28,7 @@ internal static class CommandManager {
 	private static float prevMusicVolume;
 
 	public static void Message(string s) => Message(s, ModManager.AccentColor);
-	public static void Message(string s, Color color) => Main.NewTextMultiline(s, false, color, (int) ((Main.screenWidth - 320) / Main.UIScale));
-	// The division is to work around a badly-written word wrapping function that overestimates how much text can fit.
+	public static void Message(string s, Color color) => Main.NewTextMultiline(s, false, color);
 	public static void SuccessMessage(string s) => Message(s, ModManager.SuccessColor);
 	public static void FailMessage(string s) => Message(s, ModManager.FailColor);
 

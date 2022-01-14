@@ -19,7 +19,7 @@ internal class Commands : PatchSet {
 	public override string Name => "Client-side Commands";
 	public override Version Version => new(1, 0);
 	public override string Description => "Adds client-side commands, used with the . prefix in chat.";
-	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Mods) };
+	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Mods), typeof(WordWrapFix) };
 
 	public override void BeforeApply() {
 		ImportType(typeof(Command), "Terraria");
