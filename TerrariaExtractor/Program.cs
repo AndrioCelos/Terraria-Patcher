@@ -2,10 +2,9 @@
 
 using System;
 using System.IO;
-using System.Reflection;
 using System.Windows.Forms;
 
-using Microsoft.Win32;
+using TerrariaPatcher;
 
 namespace TerrariaExtractor;
 
@@ -18,41 +17,20 @@ internal static class Program {
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 
-		string directory;
-		if (args.Length > 0 && Directory.Exists(args[0]))
-			directory = args[0];
-		else if (Environment.OSVersion.Platform == PlatformID.Win32NT && GetTerrariaDirectoryFromRegistry() is string path)
-			directory = path;
-		else if (Directory.Exists(@"C:\Program Files (x86)\Steam\steamapps\common\Terraria"))
-			directory = @"C:\Program Files (x86)\Steam\steamapps\common\Terraria";
-		else {
-			var openFileDialog = new OpenFileDialog() { Title = "Please locate your Terraria installation", Filter = "Terraria.exe|Terraria.exe" };
-			if (openFileDialog.ShowDialog() != DialogResult.OK)
-				return 1;
-			directory = Path.GetDirectoryName(openFileDialog.FileName)!;
-		}
+		try {
+			var directory = Utils.GuiGetTerrariaDirectory(args);
+			if (directory is null) return 1;
 
-		// Extract ReLogic.dll.
-		if (File.Exists(Path.Combine(directory, "ReLogic.dll")))
-			MessageBox.Show("ReLogic.dll already exists. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
-		else {
-			var assembly = Assembly.LoadFrom(Path.Combine(directory, "Terraria.exe"));
-			var inputStream = assembly.GetManifestResourceStream("Terraria.Libraries.ReLogic.ReLogic.dll") ?? throw new Exception("ReLogic.dll not found");
-			using var outputStream = File.OpenWrite(Path.Combine(directory, "ReLogic.dll"));
-			var bytes = new byte[4096];
-			while (true) {
-				var n = inputStream.Read(bytes, 0, bytes.Length);
-				if (n == 0) break;
-				outputStream.Write(bytes, 0, n);
+			if (File.Exists(Path.Combine(directory, "ReLogic.dll")))
+				MessageBox.Show("ReLogic.dll already exists. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			else {
+				Utils.ExtractResource(directory, "Terraria.Libraries.ReLogic.ReLogic.dll", "ReLogic.dll");
+				MessageBox.Show("Successfully extracted ReLogic.dll. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
-			MessageBox.Show("Successfully extracted ReLogic.dll. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			return 0;
+		} catch (Exception ex) {
+			MessageBox.Show($"An exception occurred:\n{ex}", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			return 1;
 		}
-		return 0;
-	}
-
-	private static string? GetTerrariaDirectoryFromRegistry() {
-		using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-		using var subKey = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 105600");
-		return subKey?.GetValue("InstallLocation") as string;
 	}
 }
