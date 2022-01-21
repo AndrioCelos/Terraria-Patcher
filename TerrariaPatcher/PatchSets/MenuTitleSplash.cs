@@ -16,14 +16,15 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class MenuTitleSplash : PatchSet {
 	public override string Name => "Menu Title Splash";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Adds a title splash to the menu, for full screen or borderless window players.";
 
 	public static void DrawTitleSplash(string title) {
 		if (title is not null && Main.menuMode == MenuID.Title) {
-			var size = FontAssets.MouseText.Value.MeasureString(title);
-			ChatManager.DrawColorCodedStringWithShadow(Main.spriteBatch, FontAssets.MouseText.Value, title, new(Main.screenWidth / 2, 200),
-				new Color(255, 240, 20) * ((float) Main.mouseTextColor / 255), 0, size / 2, new(1.5f, 1.5f));
+			var font = FontAssets.DeathText.Value;
+			var size = font.MeasureString(title);
+			ChatManager.DrawColorCodedStringWithShadow(Main.spriteBatch, font, title, new(Main.screenWidth / 2, 200),
+				new Color(255, 240, 20) * ((float) Main.mouseTextColor / 255), 0, size / 2, new(0.5f, 0.5f));
 		}
 	}
 
