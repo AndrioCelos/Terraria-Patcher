@@ -18,7 +18,7 @@ internal class ShootFix : PatchSet {
 			// When auto-firing shooting weapons such as staves, itemAnimation is set before both variables are decremented,
 			// but itemTime is set after. This causes the animation and shooting to gradually go out of sync.
 			// This fix allows such weapons to auto-fire slightly faster than in the vanilla game, but so be it.
-			if (__instance.itemTime != 0) __instance.itemTime--;
+			if (__instance.itemTime != 0) __instance.SetItemTime(__instance.itemTime - 1);
 		}
 	}
 }
