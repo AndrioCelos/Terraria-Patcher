@@ -18,7 +18,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class BossBars : PatchSet {
 	public override string Name => "Better Boss Bars";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Adds text to boss bars with the name of the boss and its exact life remaining, and adds a boss bar for the Eternia Crystal.";
 
 	internal class BossBarSystemPatch : PrefixPatch {
@@ -28,10 +28,9 @@ internal class BossBars : PatchSet {
 			var index = NPC.FindFirstNPC(NPCID.DD2EterniaCrystal);
 			if (index >= 0) {
 				var npc = Main.npc[index];
-				var texture = TextureAssets.Item[ItemID.DD2ElderCrystal].Value;
-				var barIconFrame = texture.Frame();
+				var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.DD2EterniaCrystal]].Value;
 				var life = Terraria.GameContent.Events.DD2Event.LostThisRun ? 0 : npc.life;
-				DrawFancyBar(spriteBatch, texture, barIconFrame, npc.FullName, 0, 0, life, npc.lifeMax, new(0, -50), new(2, 4));
+				DrawFancyBar(spriteBatch, texture, npc.FullName, 0, 0, life, npc.lifeMax, new(0, -50));
 			}
 		}
 	}
@@ -55,14 +54,14 @@ internal class BossBars : PatchSet {
 		spriteBatch.Draw(bossBarTexture, rectangle.TopLeft(), fillFrame, Color.White, 0, Vector2.Zero, new Vector2(fillWidth / fillFrame.Width, 1), SpriteEffects.None, 0);
 		spriteBatch.Draw(bossBarTexture, rectangle.TopLeft() + new Vector2(fillWidth - 2, 0), shieldEndFrame, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0);
 	}
-	public static void DrawFancyBar(SpriteBatch spriteBatch, Texture2D barIconTexture, Rectangle barIconFrame, string name, int life, int maxLife, int shield, int maxShield, Point extraOffset = default, Point extraHeadOffset = default) {
+	public static void DrawFancyBar(SpriteBatch spriteBatch, Texture2D iconTexture, string name, int life, int maxLife, int shield, int maxShield, Point extraOffset = default) {
 		var bossBarTexture = Main.Assets.Request<Texture2D>("Images/UI/UI_BossBar", AssetRequestMode.ImmediateLoad).Value;
 		const int verticalFrames = 6;
 		var barOffset = new Point(32, 24);
 		var backgroundSpriteRect = bossBarTexture.Frame(verticalFrames: verticalFrames, frameY: 3);
 		var backgroundColor = Color.White * 0.2f;
 
-		var rectangle = Utils.CenteredRectangle(Main.ScreenSize.ToVector2() * new Vector2(0.5f, 1) + new Vector2(0, -50), new(456, 22));
+		var rectangle = Terraria.Utils.CenteredRectangle(Main.ScreenSize.ToVector2() * new Vector2(0.5f, 1) + new Vector2(0, -50), new(456, 22));
 		rectangle.Offset(extraOffset);
 		var borderTopLeft = rectangle.TopLeft() - barOffset.ToVector2();
 		spriteBatch.Draw(bossBarTexture, borderTopLeft, backgroundSpriteRect, backgroundColor, 0f, Vector2.Zero, 1, SpriteEffects.None, 0f);
@@ -74,15 +73,16 @@ internal class BossBars : PatchSet {
 
 		var borderFrame = bossBarTexture.Frame(verticalFrames: verticalFrames, frameY: 0);
 		spriteBatch.Draw(bossBarTexture, borderTopLeft, borderFrame, Color.White, 0, Vector2.Zero, 1, SpriteEffects.None, 0);
-		var iconOffset = new Vector2(4f, 20f) + barIconFrame.Size() / 2f + extraHeadOffset.ToVector2();
-		spriteBatch.Draw(barIconTexture, borderTopLeft + iconOffset, barIconFrame, Color.White, 0f, barIconFrame.Size() / 2f, 1f, SpriteEffects.None, 0f);
+
+		var iconFrame = new Rectangle(0, 0, iconTexture.Width, iconTexture.Height);
+		spriteBatch.Draw(iconTexture, borderTopLeft + new Vector2(17, 34), iconFrame, Color.White, 0, iconFrame.Size() / 2, 1, SpriteEffects.None, 0);
 
 		var text = (shield > 0 || maxLife == 0) ? $"{name}: {shield} / {maxShield}" : $"{name}: {life} / {maxLife}";
 		var font = FontAssets.MouseText.Value;
-		ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, text, new Vector2((Main.ScreenSize.X - font.MeasureString(text).X) / 2, Main.ScreenSize.Y - 62) + extraOffset.ToVector2(), Color.White, 0, Vector2.Zero, Vector2.One, -1, 2);
+		ChatManager.DrawColorCodedStringWithShadow(spriteBatch, font, text, new Vector2((Main.ScreenSize.X - font.MeasureString(text).X) / 2, Main.ScreenSize.Y - 62) + extraOffset.ToVector2(), Color.White, 0, Vector2.Zero, Vector2.One);
 	}
-	public static void DrawFancyBar(SpriteBatch spriteBatch, Texture2D barIconTexture, Rectangle barIconFrame, string name, int life, int maxLife)
-		=> DrawFancyBar(spriteBatch, barIconTexture, barIconFrame, name, life, maxLife, 0, 0);
+	public static void DrawFancyBar(SpriteBatch spriteBatch, Texture2D barIconTexture, string name, int life, int maxLife)
+		=> DrawFancyBar(spriteBatch, barIconTexture, name, life, maxLife, 0, 0);
 
 	internal static int GetNpcMaxLife(int npcType, NPC targetNpc, NPC dummyNpc) {
 		dummyNpc.SetDefaults(npcType, targetNpc.GetMatchingSpawnParams());
@@ -91,16 +91,16 @@ internal class BossBars : PatchSet {
 
 	internal class DrawFancyBarPatch1 : PrefixPatch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(BigProgressBarHelper), "DrawFancyBar", typeof(SpriteBatch), typeof(float), typeof(Texture2D), typeof(Rectangle));
-		public static bool Prefix(SpriteBatch spriteBatch, float lifePercent, Texture2D barIconTexture, Rectangle barIconFrame) {
-			DrawFancyBar(spriteBatch, barIconTexture, barIconFrame, "*", (int) (lifePercent * 1000), 1000);
+		public static bool Prefix(SpriteBatch spriteBatch, float lifePercent, Texture2D barIconTexture) {
+			DrawFancyBar(spriteBatch, barIconTexture, "*", (int) (lifePercent * 1000), 1000);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
 
 	internal class DrawFancyBarPatch2 : PrefixPatch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(BigProgressBarHelper), "DrawFancyBar", typeof(SpriteBatch), typeof(float), typeof(Texture2D), typeof(Rectangle), typeof(float));
-		public static bool Prefix(SpriteBatch spriteBatch, float lifePercent, Texture2D barIconTexture, Rectangle barIconFrame, float shieldPercent) {
-			DrawFancyBar(spriteBatch, barIconTexture, barIconFrame, "*", (int) (lifePercent * 1000), 1000, (int) (shieldPercent * 1000), 1000);
+		public static bool Prefix(SpriteBatch spriteBatch, float lifePercent, Texture2D barIconTexture, float shieldPercent) {
+			DrawFancyBar(spriteBatch, barIconTexture, "*", (int) (lifePercent * 1000), 1000, (int) (shieldPercent * 1000), 1000);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -109,9 +109,8 @@ internal class BossBars : PatchSet {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(CommonBossBigProgressBar), "Draw");
 		public static bool Prefix(ref BigProgressBarInfo info, SpriteBatch spriteBatch, int ____headIndex) {
 			var value = TextureAssets.NpcHeadBoss[____headIndex].Value;
-			var barIconFrame = value.Frame();
 			var npc = Main.npc[info.npcIndexToAimAt];
-			DrawFancyBar(spriteBatch, value, barIconFrame, npc.FullName, npc.life, npc.lifeMax);
+			DrawFancyBar(spriteBatch, value, npc.FullName, npc.life, npc.lifeMax);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -127,9 +126,8 @@ internal class BossBars : PatchSet {
 				_ => 0
 			};
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[____headIndex]].Value;
-			var barIconFrame = texture.Frame();
 			var npc = Main.npc[info.npcIndexToAimAt];
-			DrawFancyBar(spriteBatch, texture, barIconFrame, npc.TypeName, npc.life, npc.lifeMax, shield, NPC.ShieldStrengthTowerMax);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, npc.life, npc.lifeMax, shield, NPC.ShieldStrengthTowerMax);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -142,7 +140,7 @@ internal class BossBars : PatchSet {
 								   select npc2.life).Sum();
 			var maxLife = npc.lifeMax + ____creeperForReference.lifeMax * NPC.GetBrainOfCthuluCreepersCount();
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.BrainofCthulhu]].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, life, maxLife);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, life, maxLife);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -155,7 +153,7 @@ internal class BossBars : PatchSet {
 						select npc2.life).Sum();
 			var maxLife = npc.lifeMax * (NPC.GetEaterOfWorldsSegmentsCount() + 2);
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.EaterofWorldsHead]].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, life, maxLife);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, life, maxLife);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -169,7 +167,7 @@ internal class BossBars : PatchSet {
 			var maxLife = GetNpcMaxLife(NPCID.Golem, npc, ____referenceDummy)
 				+ GetNpcMaxLife(NPCID.GolemHead, npc, ____referenceDummy);
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.GolemHead]].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, life, maxLife);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, life, maxLife);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -184,7 +182,7 @@ internal class BossBars : PatchSet {
 				+ GetNpcMaxLife(NPCID.MartianSaucerCannon, npc, ____referenceDummy) * 2
 				+ (Main.expertMode ? GetNpcMaxLife(NPCID.MartianSaucerCore, npc, ____referenceDummy) : 0);
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.MartianSaucerCore]].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, life, maxLife);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, life, maxLife);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -199,7 +197,7 @@ internal class BossBars : PatchSet {
 				+ GetNpcMaxLife(NPCID.MoonLordHand, npc, ____referenceDummy) * 2
 				+ GetNpcMaxLife(NPCID.MoonLordCore, npc, ____referenceDummy);
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.MoonLordHead]].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, life, maxLife);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, life, maxLife);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -212,7 +210,7 @@ internal class BossBars : PatchSet {
 						select npc2.life).Sum();
 			var maxLife = GetNpcMaxLife(NPCID.PirateShipCannon, npc, ____referenceDummy) * 4;
 			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[NPCID.PirateShip]].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, life, maxLife);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, life, maxLife);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
@@ -222,7 +220,7 @@ internal class BossBars : PatchSet {
 		public static bool Prefix(ref BigProgressBarInfo info, SpriteBatch spriteBatch, int ____headIndex) {
 			var npc = Main.npc[info.npcIndexToAimAt];
 			var texture = TextureAssets.NpcHeadBoss[____headIndex].Value;
-			DrawFancyBar(spriteBatch, texture, texture.Frame(), npc.TypeName, npc.life, npc.lifeMax);
+			DrawFancyBar(spriteBatch, texture, npc.TypeName, npc.life, npc.lifeMax);
 			return Program.SKIP_ORIGINAL;
 		}
 	}
