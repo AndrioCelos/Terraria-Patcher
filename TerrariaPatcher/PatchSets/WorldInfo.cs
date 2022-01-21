@@ -2,7 +2,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+
+using dnlib.DotNet;
 
 using Terraria;
 using Terraria.GameContent.Events;
@@ -28,6 +31,11 @@ internal class WorldInfo : PatchSet {
 					ShowWorldInfo(true);
 				}
 			};
+		}
+
+		public override void PatchMethodBody(MethodDef method) {
+			if (this.PatchSet?.Config is not ConfigFile config || config.ShowWorldInfoOnEntry)
+				base.PatchMethodBody(method);
 		}
 	}
 
@@ -121,5 +129,10 @@ internal class WorldInfo : PatchSet {
 			Main.NewTextMultiline("Defeated: " + string.Join(", ", from l in list select l.longTag), false, ModManager.AccentColor, -1);
 		else
 			Main.NewTextMultiline("Defeated: " + string.Join(", ", from l in list select l.shortTag), false, ModManager.AccentColor, -1);
+	}
+
+	public class ConfigFile : IPatchSetConfig {
+		[Description("Specifies whether to automatically show world info upon entering a new world.")]
+		public bool ShowWorldInfoOnEntry { get; set; } = true;
 	}
 }

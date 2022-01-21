@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -46,6 +47,7 @@ internal class PlayerFileFilter : PatchSet {
 		public static string Filter => $"*{FilterString}.plr";
 
 		public override void PatchMethodBody(MethodDef method) {
+			if (this.PatchSet?.Config is ConfigFile config && !config.Filter) return;
 			// Replace "*.plr" with `Filter`.
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -74,6 +76,7 @@ internal class PlayerFileFilter : PatchSet {
 		public static string Filter => $"{FilterString}.plr";
 
 		public override void PatchMethodBody(MethodDef method) {
+			if (this.PatchSet?.Config is ConfigFile config && !config.Filter) return;
 			// Replace "*.plr" with `Filter`.
 			var instructions = method.Body.Instructions;
 			for (int i = 0; i < instructions.Count; i++) {
@@ -144,6 +147,7 @@ internal class PlayerFileFilter : PatchSet {
 		}
 
 		public override void PatchMethodBody(MethodDef method) {
+			if (this.PatchSet?.Config is ConfigFile config && !config.DisplaySuffix) return;
 			// Insert a call to AlterText immediately before `if (this._data.Player.loadStatus != 0)`.
 			var foundNameAccess = false;
 			var instructions = method.Body.Instructions;
@@ -170,5 +174,12 @@ internal class PlayerFileFilter : PatchSet {
 			}
 			throw new ArgumentException("Couldn't find code to replace.");
 		}
+	}
+
+	public class ConfigFile : IPatchSetConfig {
+		[Description("Specifies whether to display the friend name suffix on the character selection menu.")]
+		public bool DisplaySuffix { get; set; } = true;
+		[Description("Specifies whether to filter the character selection menu.")]
+		public bool Filter { get; set; } = true;
 	}
 }

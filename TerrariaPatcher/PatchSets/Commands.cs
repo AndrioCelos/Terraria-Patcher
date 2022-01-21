@@ -22,9 +22,17 @@ internal class Commands : PatchSet {
 	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(ModManagerMod), typeof(WordWrapFix) };
 
 	public override void BeforeApply() {
+		var keystrokeJsonConverterTypeDef = ImportType(typeof(KeystrokeJsonConverter), "Terraria");
+		var keyBindingTypeDef = ImportType(typeof(KeyBinding), "Terraria");
+		foreach (var p in keyBindingTypeDef.Properties) {
+			foreach (var attr in p.CustomAttributes) {
+				if (attr.ConstructorArguments.Count != 0 && attr.ConstructorArguments[0].Value is ClassSig classSig && classSig.TypeName == nameof(Mods.KeystrokeJsonConverter)) {
+					attr.ConstructorArguments[0] = new(attr.ConstructorArguments[0].Type, new ClassSig(keystrokeJsonConverterTypeDef));
+				}
+			}
+		}
 		ImportType(typeof(Command), "Terraria");
 		ImportType(typeof(CommandManager), "Terraria");
-		ImportType(typeof(KeyBinding), "Terraria");
 		ImportType(typeof(Keystroke), "Terraria");
 		CopyFileToOutputDirectory("Microsoft.Bcl.HashCode.dll");
 	}

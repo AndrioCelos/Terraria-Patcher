@@ -8,18 +8,36 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 namespace TerrariaPatcher;
 public partial class MainForm : Form {
 	private bool updatingSelectAll;
 	private bool patchingInProgress;
 
+	private readonly Dictionary<PatchSet, IPatchSetConfig> patchConfigs = new();
+
 	public MainForm(IEnumerable<PatchSet> patchSets) {
 		this.InitializeComponent();
 
-		var disabledPatches = File.Exists("disabledPatches.txt") ? new HashSet<string>(File.ReadAllLines("disabledPatches.txt")) : null;
+		ConfigFile? configFile = null;
+		if (File.Exists("config.json")) {
+			using var reader = new JsonTextReader(new StreamReader("config.json"));
+			configFile = new JsonSerializer().Deserialize<ConfigFile>(reader);
+		}
+		configFile ??= new();
 
 		foreach (var patchSet in patchSets) {
-			this.patchList.Items.Add(patchSet, disabledPatches is null || !disabledPatches.Contains(patchSet.GetType().Name));
+			configFile.PatchOptions.TryGetValue(patchSet.GetType().Name, out var configEntry);
+			this.patchList.Items.Add(patchSet, configEntry?.Enabled ?? true);
+
+			var configType = patchSet.GetType().GetNestedTypes().Where(t => !t.IsAbstract && typeof(IPatchSetConfig).IsAssignableFrom(t)).FirstOrDefault();
+			if (configType is not null) {
+				this.patchConfigs[patchSet] = configEntry?.Config is JToken jToken
+					? (IPatchSetConfig) jToken.ToObject(configType)
+					: (IPatchSetConfig) Activator.CreateInstance(configType);
+			}
 		}
 	}
 
@@ -41,6 +59,8 @@ public partial class MainForm : Form {
 				commandsString = $"\r\n\r\nCommands:\r\n{commandsString}";
 				this.patchDescriptionBox.Text += commandsString;
 			}
+
+			this.patchOptionsGrid.SelectedObject = this.patchConfigs.TryGetValue(patchSet, out var config) ? config : null;
 		}
 	}
 
@@ -48,13 +68,22 @@ public partial class MainForm : Form {
 		this.patchingInProgress = true;
 		this.patchButton.Enabled = false;
 		this.runButton.Enabled = false;
+		this.patchOptionsGrid.Enabled = false;
 		this.progressBar.Value = 0;
 		this.progressBar.Maximum = this.patchList.CheckedItems.Cast<PatchSet>().Sum(p => p.Patches.Count + 1);
 		this.statusLabel.Visible = true;
 
 		this.statusLabel.Text = "Saving configuration...";
 		try {
-			File.WriteAllLines("disabledPatches.txt", from i in Enumerable.Range(0, this.patchList.Items.Count) where !this.patchList.GetItemChecked(i) select this.patchList.Items[i].GetType().Name);
+			var configFile = new ConfigFile();
+			for (var i = 0; i < this.patchList.Items.Count; i++) {
+				var patchSet = (PatchSet) this.patchList.Items[i];
+				var options = new ConfigFile.PatchOptionsEntry() { Enabled = this.patchList.GetItemChecked(i), Config = this.patchConfigs.TryGetValue(patchSet, out var patchConfig) ? patchConfig : null };
+				if (!options.Enabled || options.Config is not null)
+					configFile.PatchOptions[patchSet.GetType().Name] = options;
+			}
+			using var writer = new JsonTextWriter(new StreamWriter("config.json"));
+			new JsonSerializer() { Formatting = Formatting.Indented }.Serialize(writer, configFile);
 		} catch (IOException) {
 			// This shouldn't be considered fatal.
 		}
@@ -72,6 +101,7 @@ public partial class MainForm : Form {
 
 		foreach (var patchSet in (IEnumerable<PatchSet>) e.Argument) {
 			this.backgroundWorker.ReportProgress(n, $"Applying {patchSet.Name}...");
+			patchSet.Config = this.patchConfigs.TryGetValue(patchSet, out var config) ? config : null;
 			patchSet.Apply((n2, s) => this.backgroundWorker.ReportProgress(n + 1 + n2, $"{patchSet.Name}/{s}"));
 			n += patchSet.Patches.Count + 1;
 		}
@@ -114,13 +144,13 @@ public partial class MainForm : Form {
 						return;
 					}
 				}
+				this.selectAllBox.CheckState = CheckState.Unchecked;
 				for (var i = 0; i < this.patchList.Items.Count; i++) {
 					if (i != e.Index && this.patchList.GetItemChecked(i)) {
 						this.selectAllBox.CheckState = CheckState.Indeterminate;
-						return;
+						break;
 					}
 				}
-				this.selectAllBox.CheckState = CheckState.Unchecked;
 			} else {
 				var patches = this.GetDependencyIndices(e.Index).Where(i => !this.patchList.GetItemChecked(i));
 				if (patches.Any()) {
@@ -133,15 +163,15 @@ public partial class MainForm : Form {
 						return;
 					}
 				}
+				this.selectAllBox.CheckState = CheckState.Checked;
 				for (var i = 0; i < this.patchList.Items.Count; i++) {
 					if (i != e.Index && !this.patchList.GetItemChecked(i)) {
 						this.selectAllBox.CheckState = CheckState.Indeterminate;
-						return;
+						break;
 					}
 				}
-				this.selectAllBox.CheckState = CheckState.Checked;
 			}
-			this.patchButton.Enabled = this.patchList.CheckedIndices.Count != 0;
+			this.patchButton.Enabled = this.selectAllBox.CheckState != CheckState.Unchecked;
 		} finally {
 			this.updatingSelectAll = false;
 		}
@@ -175,6 +205,7 @@ public partial class MainForm : Form {
 	private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
 		this.patchingInProgress = false;
 		this.patchButton.Enabled = true;
+		this.patchOptionsGrid.Enabled = true;
 		this.runButton.Enabled = Program.TargetModules.Length > 0 && File.Exists(Program.TargetModules[0].OutputPath);
 		if (e.Error is null) {
 			this.statusLabel.Text = "Complete";
@@ -184,7 +215,7 @@ public partial class MainForm : Form {
 			this.statusLabel.Text = "Patch failed";
 			this.progressBar.Style = ProgressBarStyle.Continuous;
 			this.progressBar.Value = 0;
-			MessageBox.Show(this, $"An exception occurred while patching. Please restart the application.\n{e.Error}", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			MessageBox.Show(this, $"An exception occurred while patching.\n{e.Error}", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Error);
 		}
 	}
 
@@ -208,5 +239,11 @@ public partial class MainForm : Form {
 		this.patchNameBox.Text = "Terraria Patcher";
 		this.patchVersionBox.Text = "";
 		this.patchDescriptionBox.Text = "";
+		splitContainer2.Panel2Collapsed = true;
+	}
+
+	private void showPatchOptionsButton_Click(object sender, EventArgs e) {
+		splitContainer2.Panel2Collapsed = !splitContainer2.Panel2Collapsed;
+		showPatchOptionsButton.Text = $"{(splitContainer2.Panel2Collapsed ? "Show" : "Hide")} options";
 	}
 }

@@ -16,6 +16,7 @@ public abstract class Patch {
 	protected const string CONSTRUCTOR = ".ctor";
 	protected const string STATIC_CONSTRUCTOR = ".cctor";
 
+	public PatchSet? PatchSet { get; internal set; }
 	public abstract PatchTarget TargetMethod { get; }
 
 	internal TargetModule? currentPatchTargetModule;

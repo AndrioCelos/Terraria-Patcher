@@ -36,11 +36,20 @@ partial class MainForm {
 			this.patchVersionBox = new System.Windows.Forms.TextBox();
 			this.patchNameBox = new System.Windows.Forms.TextBox();
 			this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
+			this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+			this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+			this.patchOptionsGrid = new System.Windows.Forms.PropertyGrid();
+			this.showPatchOptionsButton = new System.Windows.Forms.Button();
 			this.panel1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
 			this.splitContainer1.Panel2.SuspendLayout();
 			this.splitContainer1.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+			this.splitContainer2.Panel1.SuspendLayout();
+			this.splitContainer2.Panel2.SuspendLayout();
+			this.splitContainer2.SuspendLayout();
+			this.tableLayoutPanel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// patchList
@@ -51,7 +60,7 @@ partial class MainForm {
 			this.patchList.Location = new System.Drawing.Point(0, 0);
 			this.patchList.Margin = new System.Windows.Forms.Padding(4);
 			this.patchList.Name = "patchList";
-			this.patchList.Size = new System.Drawing.Size(239, 198);
+			this.patchList.Size = new System.Drawing.Size(270, 360);
 			this.patchList.Sorted = true;
 			this.patchList.TabIndex = 0;
 			this.patchList.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.patchList_ItemCheck);
@@ -74,7 +83,7 @@ partial class MainForm {
 			// patchButton
 			// 
 			this.patchButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.patchButton.Location = new System.Drawing.Point(370, 2);
+			this.patchButton.Location = new System.Drawing.Point(456, 2);
 			this.patchButton.Margin = new System.Windows.Forms.Padding(4);
 			this.patchButton.Name = "patchButton";
 			this.patchButton.Size = new System.Drawing.Size(80, 30);
@@ -91,15 +100,15 @@ partial class MainForm {
 			this.panel1.Controls.Add(this.patchButton);
 			this.panel1.Controls.Add(this.selectAllBox);
 			this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
-			this.panel1.Location = new System.Drawing.Point(0, 198);
+			this.panel1.Location = new System.Drawing.Point(0, 360);
 			this.panel1.Margin = new System.Windows.Forms.Padding(4);
 			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(454, 79);
+			this.panel1.Size = new System.Drawing.Size(540, 79);
 			this.panel1.TabIndex = 3;
 			// 
 			// statusLabel
 			// 
-			this.statusLabel.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+			this.statusLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.statusLabel.AutoSize = true;
 			this.statusLabel.Location = new System.Drawing.Point(3, 33);
 			this.statusLabel.Name = "statusLabel";
@@ -114,14 +123,14 @@ partial class MainForm {
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.progressBar.Location = new System.Drawing.Point(6, 53);
 			this.progressBar.Name = "progressBar";
-			this.progressBar.Size = new System.Drawing.Size(445, 23);
+			this.progressBar.Size = new System.Drawing.Size(531, 23);
 			this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
 			this.progressBar.TabIndex = 4;
 			// 
 			// runButton
 			// 
 			this.runButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.runButton.Location = new System.Drawing.Point(282, 2);
+			this.runButton.Location = new System.Drawing.Point(368, 2);
 			this.runButton.Margin = new System.Windows.Forms.Padding(4);
 			this.runButton.Name = "runButton";
 			this.runButton.Size = new System.Drawing.Size(80, 30);
@@ -143,11 +152,9 @@ partial class MainForm {
 			// 
 			// splitContainer1.Panel2
 			// 
-			this.splitContainer1.Panel2.Controls.Add(this.patchDescriptionBox);
-			this.splitContainer1.Panel2.Controls.Add(this.patchVersionBox);
-			this.splitContainer1.Panel2.Controls.Add(this.patchNameBox);
-			this.splitContainer1.Size = new System.Drawing.Size(454, 198);
-			this.splitContainer1.SplitterDistance = 239;
+			this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
+			this.splitContainer1.Size = new System.Drawing.Size(540, 360);
+			this.splitContainer1.SplitterDistance = 270;
 			this.splitContainer1.SplitterWidth = 5;
 			this.splitContainer1.TabIndex = 4;
 			// 
@@ -157,12 +164,13 @@ partial class MainForm {
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.patchDescriptionBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
-			this.patchDescriptionBox.Location = new System.Drawing.Point(3, 46);
+			this.patchDescriptionBox.Location = new System.Drawing.Point(0, 51);
+			this.patchDescriptionBox.Margin = new System.Windows.Forms.Padding(0, 3, 3, 3);
 			this.patchDescriptionBox.Multiline = true;
 			this.patchDescriptionBox.Name = "patchDescriptionBox";
 			this.patchDescriptionBox.ReadOnly = true;
 			this.patchDescriptionBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-			this.patchDescriptionBox.Size = new System.Drawing.Size(194, 145);
+			this.patchDescriptionBox.Size = new System.Drawing.Size(262, 93);
 			this.patchDescriptionBox.TabIndex = 1;
 			this.patchDescriptionBox.Text = "Patch description";
 			// 
@@ -173,10 +181,9 @@ partial class MainForm {
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.patchVersionBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
 			this.patchVersionBox.Location = new System.Drawing.Point(3, 27);
-			this.patchVersionBox.Multiline = true;
 			this.patchVersionBox.Name = "patchVersionBox";
 			this.patchVersionBox.ReadOnly = true;
-			this.patchVersionBox.Size = new System.Drawing.Size(194, 22);
+			this.patchVersionBox.Size = new System.Drawing.Size(259, 18);
 			this.patchVersionBox.TabIndex = 1;
 			this.patchVersionBox.Text = "Patch version";
 			// 
@@ -189,7 +196,7 @@ partial class MainForm {
 			this.patchNameBox.Location = new System.Drawing.Point(3, 3);
 			this.patchNameBox.Name = "patchNameBox";
 			this.patchNameBox.ReadOnly = true;
-			this.patchNameBox.Size = new System.Drawing.Size(194, 18);
+			this.patchNameBox.Size = new System.Drawing.Size(259, 18);
 			this.patchNameBox.TabIndex = 1;
 			this.patchNameBox.Text = "Patch name";
 			// 
@@ -200,12 +207,70 @@ partial class MainForm {
 			this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker_ProgressChanged);
 			this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
 			// 
+			// splitContainer2
+			// 
+			this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+			this.splitContainer2.Name = "splitContainer2";
+			this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+			// 
+			// splitContainer2.Panel1
+			// 
+			this.splitContainer2.Panel1.Controls.Add(this.tableLayoutPanel1);
+			// 
+			// splitContainer2.Panel2
+			// 
+			this.splitContainer2.Panel2.Controls.Add(this.patchOptionsGrid);
+			this.splitContainer2.Size = new System.Drawing.Size(265, 360);
+			this.splitContainer2.SplitterDistance = 180;
+			this.splitContainer2.TabIndex = 2;
+			// 
+			// tableLayoutPanel1
+			// 
+			this.tableLayoutPanel1.ColumnCount = 1;
+			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+			this.tableLayoutPanel1.Controls.Add(this.patchNameBox, 0, 0);
+			this.tableLayoutPanel1.Controls.Add(this.patchDescriptionBox, 0, 2);
+			this.tableLayoutPanel1.Controls.Add(this.patchVersionBox, 0, 1);
+			this.tableLayoutPanel1.Controls.Add(this.showPatchOptionsButton, 0, 3);
+			this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+			this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+			this.tableLayoutPanel1.RowCount = 4;
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.tableLayoutPanel1.Size = new System.Drawing.Size(265, 180);
+			this.tableLayoutPanel1.TabIndex = 2;
+			// 
+			// patchOptionsGrid
+			// 
+			this.patchOptionsGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.patchOptionsGrid.Location = new System.Drawing.Point(0, 0);
+			this.patchOptionsGrid.Name = "patchOptionsGrid";
+			this.patchOptionsGrid.Size = new System.Drawing.Size(265, 176);
+			this.patchOptionsGrid.TabIndex = 0;
+			this.patchOptionsGrid.ToolbarVisible = false;
+			// 
+			// showPatchOptionsButton
+			// 
+			this.showPatchOptionsButton.AutoSize = true;
+			this.showPatchOptionsButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+			this.showPatchOptionsButton.Location = new System.Drawing.Point(3, 150);
+			this.showPatchOptionsButton.Name = "showPatchOptionsButton";
+			this.showPatchOptionsButton.Size = new System.Drawing.Size(97, 27);
+			this.showPatchOptionsButton.TabIndex = 2;
+			this.showPatchOptionsButton.Text = "Show options";
+			this.showPatchOptionsButton.UseVisualStyleBackColor = true;
+			this.showPatchOptionsButton.Click += new System.EventHandler(this.showPatchOptionsButton_Click);
+			// 
 			// MainForm
 			// 
 			this.AcceptButton = this.patchButton;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(454, 277);
+			this.ClientSize = new System.Drawing.Size(540, 439);
 			this.Controls.Add(this.splitContainer1);
 			this.Controls.Add(this.panel1);
 			this.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -217,9 +282,14 @@ partial class MainForm {
 			this.panel1.PerformLayout();
 			this.splitContainer1.Panel1.ResumeLayout(false);
 			this.splitContainer1.Panel2.ResumeLayout(false);
-			this.splitContainer1.Panel2.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
 			this.splitContainer1.ResumeLayout(false);
+			this.splitContainer2.Panel1.ResumeLayout(false);
+			this.splitContainer2.Panel2.ResumeLayout(false);
+			((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+			this.splitContainer2.ResumeLayout(false);
+			this.tableLayoutPanel1.ResumeLayout(false);
+			this.tableLayoutPanel1.PerformLayout();
 			this.ResumeLayout(false);
 
 	}
@@ -238,4 +308,8 @@ partial class MainForm {
 	private System.ComponentModel.BackgroundWorker backgroundWorker;
 	private System.Windows.Forms.TextBox patchVersionBox;
 	private System.Windows.Forms.Button runButton;
+	private System.Windows.Forms.SplitContainer splitContainer2;
+	private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+	private System.Windows.Forms.Button showPatchOptionsButton;
+	private System.Windows.Forms.PropertyGrid patchOptionsGrid;
 }

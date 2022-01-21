@@ -22,6 +22,7 @@ public abstract class PatchSet {
 	public abstract string Description { get; }
 	public virtual string TargetModuleName => "Terraria";
 	public virtual IReadOnlyCollection<Type>? Dependencies => null;
+	protected internal IPatchSetConfig? Config { get; internal set; }
 
 	public virtual void BeforeApply() { }
 	public virtual void AfterApply() { }
@@ -32,7 +33,9 @@ public abstract class PatchSet {
 		var patches = new List<Patch>();
 		foreach (var patchType in this.GetType().GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
 			if (!patchType.IsAbstract && typeof(Patch).IsAssignableFrom(patchType.BaseType)) {
-				patches.Add((Patch) Activator.CreateInstance(patchType));
+				var patch = (Patch) Activator.CreateInstance(patchType);
+				patch.PatchSet = this;
+				patches.Add(patch);
 			}
 		}
 		this.Patches = patches.AsReadOnly();
@@ -121,6 +124,7 @@ public abstract class PatchSet {
 	private void CopyStaticMembers(Type originalType, TypeDef originalTypeDef, TypeDef copyTypeDef) {
 		foreach (var type in originalType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
 			if (type.GetCustomAttribute<NoCopyToTargetAttribute>() is null
+				&& !typeof(IPatchSetConfig).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type)
 				&& !typeof(Patch).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type))
 				// Skip MethodDef iterator types.
 				originalTypeDef.Module.Import(type).ResolveTypeDefThrow().DeclaringType = copyTypeDef;
