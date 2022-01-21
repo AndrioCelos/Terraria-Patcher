@@ -68,6 +68,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="Terraria">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Terraria\Terraria.exe</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +97,7 @@
     <Compile Include="PatchSets\ColouredMetalDetector.cs" />
     <Compile Include="PatchSets\Commands.cs" />
     <Compile Include="PatchSets\InfoAccessoryDisplayFix.cs" />
+    <Compile Include="PatchSets\RemoveSteamAchievements.cs" />
     <Compile Include="PatchSets\ShootFix.cs" />
     <Compile Include="PatchSets\DungeonGuardianBossMusic.cs" />
     <Compile Include="PatchSets\MenuTitleSplash.cs" />
