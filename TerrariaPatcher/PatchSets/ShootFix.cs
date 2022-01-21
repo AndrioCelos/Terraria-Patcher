@@ -2,11 +2,6 @@
 
 using System;
 
-using dnlib.DotNet;
-using dnlib.DotNet.Emit;
-
-using Microsoft.Xna.Framework;
-
 using Terraria;
 
 namespace TerrariaPatcher.PatchSets;
