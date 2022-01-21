@@ -9,6 +9,8 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
+using Newtonsoft.Json;
+
 using Terraria;
 using Terraria.Audio;
 using Terraria.Chat;
@@ -17,7 +19,27 @@ using Terraria.UI.Chat;
 namespace TerrariaPatcher.Mods;
 
 internal static class CommandManager {
-	public static List<KeyBinding> KeyBindings { get; } = new();
+	public class ConfigFile {
+		public class Alias {
+			public string CommandName { get; set; }
+			[JsonIgnore]
+			public Command? Command { get; internal set; }
+			[JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+			public string[]? Arguments { get; set; }
+
+			[JsonConstructor]
+			public Alias(string commandName, string[]? arguments) {
+				this.CommandName = commandName ?? throw new ArgumentNullException(nameof(commandName));
+				this.Arguments = arguments;
+			}
+		}
+
+		public List<KeyBinding> KeyBindings { get; set; } = new();
+		public Dictionary<string, Alias> Aliases { get; set; } = new(StringComparer.CurrentCultureIgnoreCase);
+	}
+
+	public static ConfigFile Config { get; set; } = new();
+
 	public static SortedDictionary<string, Command> Commands { get; } = new(StringComparer.CurrentCultureIgnoreCase);
 
 	private static List<Keys> currentKeys = new();
@@ -38,6 +60,8 @@ internal static class CommandManager {
 		Commands.Add("say", new(CommandSay, 1, 1, "<message>", "Sends a chat message."));
 		Commands.Add("party", new(CommandParty, 1, 1, "none/red/yellow/green/blue/purple", "Joins or leaves a party."));
 		Commands.Add("pvp", new(CommandPvP, 1, 1, "off/on/toggle", "Switches PvP on or off."));
+		Commands.Add("alias", new(CommandAlias, 2, "<alias> <command> [arguments]", "Binds a command alias."));
+		Commands.Add("unalias", new(CommandUnAlias, 1, 1, "<alias>", "Removes a command alias."));
 		Commands.Add("bind", new(CommandBind, 2, 3, "<keystrokes> <command> [arguments]", "Binds a client command to a keystroke or chord. Examples of keystrokes: 'F1'; 'Ctrl+M'; 'Ctrl+P,Ctrl+1'"));
 		Commands.Add("unbind", new(CommandUnbind, 1, 1, "<keystrokes>", "Unbinds a keystroke or chord from a client command."));
 		Commands.Add("listbindings", new(CommandListBindings, 0, 1, "[keystrokes]", "Lists all key bindings, or the command bound to the specified sequence."));
@@ -45,10 +69,15 @@ internal static class CommandManager {
 	public static void InitialisePost() => Load();
 
 	public static void Save() {
+		using var writer = new JsonTextWriter(new StreamWriter(Path.Combine(Main.SavePath, "commands.json")));
+		new JsonSerializer() { Formatting = Formatting.Indented }.Serialize(writer, Config);
+	}
+	[Obsolete("The binary config file format is deprecated.")]
+	public static void SaveBinaryConfig() {
 		using var fileStream = new FileStream(Path.Combine(Main.SavePath, "commands.dat"), FileMode.Create);
 		using var binaryWriter = new BinaryWriter(fileStream);
-		binaryWriter.Write(KeyBindings.Count);
-		foreach (var binding in KeyBindings) {
+		binaryWriter.Write(Config.KeyBindings.Count);
+		foreach (var binding in Config.KeyBindings) {
 			binaryWriter.Write(binding.Keystrokes.Length);
 			foreach (var keystroke in binding.Keystrokes) {
 				binaryWriter.Write(keystroke.Keys.Length);
@@ -57,7 +86,7 @@ internal static class CommandManager {
 				}
 				binaryWriter.Write((byte) keystroke.Modifiers);
 			}
-			binaryWriter.Write(binding.CommandLabel);
+			binaryWriter.Write(binding.CommandName);
 			binaryWriter.Write(binding.Arguments.Length);
 			foreach (var parameter in binding.Arguments) {
 				binaryWriter.Write(parameter);
@@ -67,32 +96,48 @@ internal static class CommandManager {
 	}
 
 	public static void Load() {
-		if (File.Exists(Path.Combine(Main.SavePath, "commands.dat"))) {
-			using var reader = new BinaryReader(File.Open(Path.Combine(Main.SavePath, "commands.dat"), FileMode.Open, FileAccess.Read));
-			var bindingCount = reader.ReadInt32();
-			for (var i = 0; i < bindingCount; i++) {
-				var keystrokeCount = reader.ReadInt32();
-				var strokes = new Keystroke[keystrokeCount];
-				for (var j = 0; j < keystrokeCount; j++) {
-					var keyCount = reader.ReadInt32();
-					var keys = new Keys[keyCount];
-					for (var k = 0; k < keyCount; k++)
-						keys[k] = (Keys) reader.ReadInt32();
+		if (File.Exists(Path.Combine(Main.SavePath, "commands.json"))) {
+			using var reader = new JsonTextReader(new StreamReader(Path.Combine(Main.SavePath, "commands.json")));
+			Config = new JsonSerializer().Deserialize<ConfigFile>(reader);
 
-					var modifiers = (Keystroke.ModifierKeys) reader.ReadByte();
-					strokes[j] = new(keys, modifiers);
-				}
-
-				var commandText = reader.ReadString();
-				Commands.TryGetValue(commandText, out var command);
-
-				var argCount = reader.ReadInt32();
-				var args = new string[argCount];
-				for (var j = 0; j < argCount; j++)
-					args[j] = reader.ReadString();
-
-				KeyBindings.Add(new KeyBinding(strokes, commandText, command, args));
+			foreach (var alias in Config.Aliases.Values) {
+				if (Commands.TryGetValue(alias.CommandName, out var command))
+					alias.Command = command;
 			}
+			foreach (var alias in Config.KeyBindings) {
+				if (Commands.TryGetValue(alias.CommandName, out var command))
+					alias.Command = command;
+			}
+		} else if (File.Exists(Path.Combine(Main.SavePath, "commands.dat"))) {
+			Config = new();
+			using (var reader = new BinaryReader(File.Open(Path.Combine(Main.SavePath, "commands.dat"), FileMode.Open, FileAccess.Read))) {
+				var bindingCount = reader.ReadInt32();
+				for (var i = 0; i < bindingCount; i++) {
+					var keystrokeCount = reader.ReadInt32();
+					var strokes = new Keystroke[keystrokeCount];
+					for (var j = 0; j < keystrokeCount; j++) {
+						var keyCount = reader.ReadInt32();
+						var keys = new Keys[keyCount];
+						for (var k = 0; k < keyCount; k++)
+							keys[k] = (Keys) reader.ReadInt32();
+
+						var modifiers = (Keystroke.ModifierKeys) reader.ReadByte();
+						strokes[j] = new(keys, modifiers);
+					}
+
+					var commandText = reader.ReadString();
+					Commands.TryGetValue(commandText, out var command);
+
+					var argCount = reader.ReadInt32();
+					var args = new string[argCount];
+					for (var j = 0; j < argCount; j++)
+						args[j] = reader.ReadString();
+
+					Config.KeyBindings.Add(new KeyBinding(strokes, commandText, command, args));
+				}
+			}
+			Save();
+			File.Delete(Path.Combine(Main.SavePath, "commands.dat"));
 		}
 	}
 
@@ -117,8 +162,13 @@ internal static class CommandManager {
 			if (command is null) {
 				label = builder.ToString();
 				if (!Commands.TryGetValue(label, out command)) {
-					FailMessage($"Unknown command: {label}");
-					return;
+					if (Config.Aliases.TryGetValue(label, out var alias) && alias.Command is not null) {
+						command = alias.Command;
+						if (alias.Arguments is not null) args.AddRange(alias.Arguments);
+					} else {
+						FailMessage($"Unknown command: {label}");
+						return;
+					}
 				}
 			} else
 				args.Add(builder.ToString());
@@ -165,10 +215,10 @@ internal static class CommandManager {
 			currentKeys2.Sort();
 			currentKeys2.AddRange(newKeys);
 
-			foreach (var binding in KeyBindings) binding.canReset = true;
+			foreach (var binding in Config.KeyBindings) binding.canReset = true;
 
 			var skipFirstKeystrokeBindings = false;  // Ctrl+A, Ctrl+B shouldn't also trigger Ctrl+B.
-			foreach (var binding in KeyBindings.Where(b => b.progress > 0)) {
+			foreach (var binding in Config.KeyBindings.Where(b => b.progress > 0)) {
 				if (binding.Keystrokes[binding.progress].Modifiers == currentModifiers &&
 					binding.Keystrokes[binding.progress].Keys.SequenceEqual(currentKeys2)) {
 					skipFirstKeystrokeBindings = true;
@@ -182,7 +232,7 @@ internal static class CommandManager {
 			}
 
 			if (!skipFirstKeystrokeBindings) {
-				foreach (var binding in KeyBindings.Where(b => b.progress == 0)) {
+				foreach (var binding in Config.KeyBindings.Where(b => b.progress == 0)) {
 					if (binding.Keystrokes[0].Modifiers == currentModifiers &&
 						binding.Keystrokes[0].Keys.SequenceEqual(currentKeys2)) {
 						binding.progress++;
@@ -197,7 +247,7 @@ internal static class CommandManager {
 
 			newKeys.Clear();
 		} else if (currentKeys.Count == 0 && prevCurrentKeys.Count != 0) {
-			foreach (var binding in KeyBindings) {
+			foreach (var binding in Config.KeyBindings) {
 				if (binding.canReset) {
 					binding.progress = 0;
 					binding.canReset = false;
@@ -382,8 +432,8 @@ internal static class CommandManager {
 	private static void CommandBind(Command command, string label, string[] args) {
 		var keystrokes = ParseKeystrokes(args[0]);
 
-		for (var i = 0; i < KeyBindings.Count; i++) {
-			var binding = KeyBindings[i];
+		for (var i = 0; i < Config.KeyBindings.Count; i++) {
+			var binding = Config.KeyBindings[i];
 			if (binding.Keystrokes.SequenceEqual(keystrokes)) {
 				FailMessage("That sequence is already bound.");
 				return;
@@ -391,7 +441,7 @@ internal static class CommandManager {
 		}
 
 		if (Commands.TryGetValue(args[1], out var command2)) {
-			KeyBindings.Add(new KeyBinding(keystrokes, args[1], command2, args.Skip(2).ToArray()));
+			Config.KeyBindings.Add(new KeyBinding(keystrokes, args[1], command2, args.Skip(2).ToArray()));
 			Save();
 			SuccessMessage("Command bound successfully.");
 		} else
@@ -401,10 +451,10 @@ internal static class CommandManager {
 	private static void CommandUnbind(Command command, string label, string[] args) {
 		var keystrokes = ParseKeystrokes(args[0]);
 
-		for (var i = 0; i < KeyBindings.Count; i++) {
-			var binding = KeyBindings[i];
+		for (var i = 0; i < Config.KeyBindings.Count; i++) {
+			var binding = Config.KeyBindings[i];
 			if (binding.Keystrokes.SequenceEqual(keystrokes)) {
-				KeyBindings.RemoveAt(i);
+				Config.KeyBindings.RemoveAt(i);
 				Save();
 				SuccessMessage("Binding removed successfully.");
 				return;
@@ -414,15 +464,36 @@ internal static class CommandManager {
 		FailMessage("That sequence is not bound to any command.");
 	}
 
+	private static void CommandAlias(Command command, string label, string[] args) {
+		if (Config.Aliases.ContainsKey(args[0])) {
+			FailMessage("That alias is already bound.");
+		} else if (Commands.ContainsKey(args[0])) {
+			FailMessage("A command with that name already exists.");
+		} else if (Commands.TryGetValue(args[1], out var command2)) {
+			Config.Aliases.Add(args[0], new(args[1], args.Length > 2 ? args.Skip(2).ToArray() : null) { Command = command2 });
+			Save();
+			SuccessMessage("Command bound successfully.");
+		} else
+			FailMessage($"Unknown command: {args[1]}");
+	}
+
+	private static void CommandUnAlias(Command command, string label, string[] args) {
+		if (Config.Aliases.Remove(args[0])) {
+			Save();
+			SuccessMessage("Alias removed successfully.");
+		} else
+			FailMessage("That alias does not exist.");
+	}
+
 	private static void CommandListBindings(Command command, string label, string[] args) {
 		Keystroke[]? keystrokes = args.Length != 0 ? ParseKeystrokes(args[0]) : null;
 
 		var any = false;
-		for (var i = 0; i < KeyBindings.Count; i++) {
-			var binding = KeyBindings[i];
+		for (var i = 0; i < Config.KeyBindings.Count; i++) {
+			var binding = Config.KeyBindings[i];
 			if (keystrokes is null || binding.Keystrokes.Take(keystrokes.Length).SequenceEqual(keystrokes)) {
 				any = true;
-				Message(string.Join<Keystroke>(",", binding.Keystrokes) + " is bound to: " + binding.CommandLabel + " " + string.Join(" ", binding.Arguments));
+				Message(string.Join<Keystroke>(",", binding.Keystrokes) + " is bound to: " + binding.CommandName + " " + string.Join(" ", binding.Arguments));
 			}
 		}
 		if (!any)
