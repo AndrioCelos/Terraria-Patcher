@@ -29,7 +29,7 @@ internal static class Program {
 		var directory = Utils.GuiGetTerrariaDirectory(args);
 		if (directory is null) return 1;
 
-		Utils.ExtractResource(directory, "Terraria.Libraries.ReLogic.ReLogic.dll", "ReLogic.dll");
+		Utils.ExtractResource(directory, "Terraria.Libraries.ReLogic.ReLogic.dll", Path.Combine(directory, "ReLogic.dll"));
 
 		TargetModules = new TargetModule[] {
 			new(Path.Combine(directory, "Terraria.exe"), Path.Combine(directory, "Terraria.patched.exe")),
