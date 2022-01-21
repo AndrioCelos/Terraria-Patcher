@@ -19,7 +19,7 @@ internal class WordWrapFix : PatchSet {
 	public override string Description => "Modifies the chat word wrap logic to work properly.";
 
 	internal class WordWrapPatch : Patch {
-		public override PatchTarget TargetMethod => PatchTarget.Create(Utils.WordwrapStringSmart);
+		public override PatchTarget TargetMethod => PatchTarget.Create(Terraria.Utils.WordwrapStringSmart);
 
 		internal static void WordWrapLineSmarter(DynamicSpriteFont font, int maxWidth, List<TextSnippet> linePart, int l, ref float x, ref float width, out int pos) {
 			string[] words = linePart[l].Text.Split(' ');
