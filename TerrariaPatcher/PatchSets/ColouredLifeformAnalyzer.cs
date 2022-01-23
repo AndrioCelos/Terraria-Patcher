@@ -15,7 +15,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class ColouredLifeformAnalyzer : PatchSet {
 	public override string Name => "Coloured Lifeform Analyzer";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Colours the lifeform analyzer text depending on the detected lifeform.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories) };
 
@@ -112,7 +112,7 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 	internal static void GetDisplayColour(int npcIndex, ref Color infoColour) {
 		var npc = npcIndex >= 0 && npcIndex < Main.npc.Length ? Main.npc[npcIndex] : null;
 		var color = npc is null || !npc.active ? Gray
-			: NpcColours.TryGetValue(npc.type, out var color1) ? color1
+			: NpcColours.TryGetValue(npc.netID, out var color1) ? color1
 			: Color.White;
 		infoColour.R = (byte) (infoColour.R * color.R / 255);
 		infoColour.G = (byte) (infoColour.G * color.G / 255);
