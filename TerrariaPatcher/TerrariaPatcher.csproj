@@ -116,9 +116,8 @@
     <Compile Include="PatchSets\RemoveSteam.cs" />
     <Compile Include="PatchSets\StackLimit.cs" />
     <Compile Include="PatchSets\ColouredLifeformAnalyzer.cs" />
-    <Compile Include="PatchSets\TallyCounter.cs" />
     <Compile Include="PatchSets\SundialHint.cs" />
-    <Compile Include="PatchSets\Stopwatch.cs" />
+    <Compile Include="PatchSets\StopwatchAndTallyCounter.cs" />
     <Compile Include="PatchSets\ColouredInfoAccessories.cs" />
     <Compile Include="PatchSets\Watch24Hour.cs" />
     <Compile Include="PatchSets\WorldInfo.cs" />
