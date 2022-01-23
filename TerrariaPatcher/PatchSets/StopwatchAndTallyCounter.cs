@@ -2,11 +2,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 using Microsoft.Xna.Framework;
+
+using Newtonsoft.Json;
 
 using Terraria;
 using Terraria.Audio;
@@ -22,11 +25,18 @@ internal class StopwatchAndTallyCounter : PatchSet {
 		public bool Running { get; set; }
 		public long Time { get; set; }
 		public long SplitTime { get; set; }
+		public bool IsEmpty => !this.Showing && !this.Running && this.Time == 0 && this.SplitTime == 0;
 	}
 
 	public class CounterState {
 		public bool Showing { get; set; }
 		public int Count { get; set; }
+		public bool IsEmpty => !this.Showing && this.Count == 0;
+	}
+
+	public class SaveData {
+		public CounterState Counter { get; set; } = new();
+		public StopwatchState Stopwatch { get; set; } = new();
 	}
 
 	public override string Name => "Stopwatch and Tally Counter";
@@ -36,7 +46,8 @@ internal class StopwatchAndTallyCounter : PatchSet {
 
 	public static CounterState Counter = new();
 	public static StopwatchState Stopwatch = new();
-	public static int lastWorldID;
+	internal static Dictionary<string, SaveData> saveData = new();
+	internal static string? lastCharacterName;
 
 	internal static string GetCounterTitle(string normalTitle) => Counter.Showing ? Lang.GetItemName(ItemID.TallyCounter).Value : normalTitle;
 	internal static string GetStopwatchTitle(string normalTitle) => Stopwatch.Showing ? Lang.GetItemName(ItemID.Stopwatch).Value : normalTitle;
@@ -77,17 +88,22 @@ internal class StopwatchAndTallyCounter : PatchSet {
 				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
 			Main.OnTickForThirdPartySoftwareOnly += Main_OnTickForThirdPartySoftwareOnly;
+
+			if (File.Exists(Path.Combine(Main.SavePath, "accessoryData.json"))) {
+				using var reader = new JsonTextReader(new StreamReader(Path.Combine(Main.SavePath, "accessoryData.json")));
+				saveData = new JsonSerializer().Deserialize<Dictionary<string, SaveData>>(reader);
+			}
 		}
 	}
 
 	private static void Hooks_OnEnterWorld(Player _) {
-		// Currently the stopwatch is not saved if you leave and enter a different world.
-		if (Main.worldID != lastWorldID) {
-			lastWorldID = Main.worldID;
-			Stopwatch.Showing = false;
-			Stopwatch.Running = false;
-			Stopwatch.Time = 0;
-			Stopwatch.SplitTime = 0;
+		if (Main.player[Main.myPlayer]?.name != lastCharacterName) {
+			lastCharacterName = Main.player[Main.myPlayer]?.name;
+			if (lastCharacterName is not null) {
+				saveData.TryGetValue(lastCharacterName, out var entry);
+				Counter = entry?.Counter ?? new();
+				Stopwatch = entry?.Stopwatch ?? new();
+			}
 		}
 	}
 
@@ -205,8 +221,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 							counterReplaced = true;
 						}
 					}
-				}
-				if (instructions[i - 3].IsConstant(103)
+				} else if (instructions[i - 3].IsConstant(103)
 					&& instructions[i].IsStloc()) {
 					i++;
 
@@ -234,6 +249,18 @@ internal class StopwatchAndTallyCounter : PatchSet {
 				}
 			}
 			if (!counterReplaced || !stopwatchReplaced) throw new ArgumentException("Couldn't find code to replace.");
+		}
+	}
+
+	internal class SavePlayerPatch : PrefixPatch {
+		public override PatchTarget TargetMethod => PatchTarget.Create(Player.SavePlayer);
+
+		public static void Prefix() {
+			if (lastCharacterName is not null) {
+				saveData[lastCharacterName] = new() { Counter = Counter, Stopwatch = Stopwatch };
+				using var writer = new JsonTextWriter(new StreamWriter(Path.Combine(Main.SavePath, "accessoryData.json")));
+				new JsonSerializer().Serialize(writer, saveData);
+			}
 		}
 	}
 }
