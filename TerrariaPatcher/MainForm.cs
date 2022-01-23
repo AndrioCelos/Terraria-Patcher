@@ -28,6 +28,7 @@ public partial class MainForm : Form {
 		}
 		configFile ??= new();
 
+		updatingSelectAll = true;
 		foreach (var patchSet in patchSets) {
 			configFile.PatchOptions.TryGetValue(patchSet.GetType().Name, out var configEntry);
 			this.patchList.Items.Add(patchSet, configEntry?.Enabled ?? true);
@@ -39,6 +40,21 @@ public partial class MainForm : Form {
 					: (IPatchSetConfig) Activator.CreateInstance(configType);
 			}
 		}
+		for (int i = 0; i < this.patchList.Items.Count; i++) {
+			if (this.patchList.GetItemChecked(i)) {
+				foreach (var j in this.GetDependencyIndices(i)) {
+					this.patchList.SetItemChecked(j, true);
+				}
+			}
+		}
+
+		bool anyDeselected = false, anySelected = false;
+		for (int i = 0; i < this.patchList.Items.Count; i++) {
+			anyDeselected = anyDeselected || !this.patchList.GetItemChecked(i);
+			anySelected = anySelected || this.patchList.GetItemChecked(i);
+		}
+		selectAllBox.CheckState = !anyDeselected ? CheckState.Checked : !anySelected ? CheckState.Unchecked : CheckState.Indeterminate;
+		updatingSelectAll = false;
 	}
 
 	private void patchList_Format(object sender, ListControlConvertEventArgs e) {
