@@ -52,7 +52,7 @@ internal class Stopwatch : PatchSet {
 			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 1, "hide/show/toggle/start/stop/startstop/reset/restart/split",
 				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
-			Main.OnTickForInternalCodeOnly += Main_OnTickForInternalCodeOnly;
+			Main.OnTickForThirdPartySoftwareOnly += Main_OnTickForThirdPartySoftwareOnly;
 		}
 	}
 
@@ -67,7 +67,7 @@ internal class Stopwatch : PatchSet {
 		}
 	}
 
-	private static void Main_OnTickForInternalCodeOnly() {
+	private static void Main_OnTickForThirdPartySoftwareOnly() {
 		if (StopwatchRunning) StopwatchTime++;
 	}
 	
