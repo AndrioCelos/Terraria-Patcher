@@ -20,12 +20,14 @@ using TerrariaPatcher.Mods;
 namespace TerrariaPatcher.PatchSets;
 
 internal class StopwatchAndTallyCounter : PatchSet {
+
 	public class StopwatchState {
 		public bool Showing { get; set; }
 		public bool Running { get; set; }
+		public bool CountDown { get; set; }
 		public long Time { get; set; }
 		public long SplitTime { get; set; }
-		public bool IsEmpty => !this.Showing && !this.Running && this.Time == 0 && this.SplitTime == 0;
+		public bool IsEmpty => !this.Showing && !this.Running && !this.CountDown && this.Time == 0 && this.SplitTime == 0;
 	}
 
 	public class CounterState {
@@ -65,7 +67,13 @@ internal class StopwatchAndTallyCounter : PatchSet {
 
 	internal static string? GetStopwatchDisplayString(ref Color infoColour) {
 		if (Stopwatch.Showing) {
+			bool minus = false;
 			var time = Stopwatch.SplitTime != 0 ? Stopwatch.SplitTime : Stopwatch.Time;
+			if (time < 0) {
+				minus = true;
+				time = -time;
+			}
+
 			var minutes = time / 3600;
 			var seconds = time / 60 % 60;
 			var cs = time % 60 * 5 / 3;
@@ -75,7 +83,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			infoColour.B = (byte) (infoColour.B * ModManager.AccentColor.B / 255);
 			infoColour.A = (byte) (infoColour.A * ModManager.AccentColor.A / 255);
 			
-			return $"{minutes:00}' {seconds:00}.{cs:00}\"";
+			return $"{(minus ? "-" : "")}{minutes:00}' {seconds:00}.{cs:00}\"";
 		} else
 			return null;
 	}
@@ -84,10 +92,11 @@ internal class StopwatchAndTallyCounter : PatchSet {
 		public static void Prefix() {
 			CommandManager.Commands.Add("counter", new(CommandCounter, 1, 2, "hide/show/toggle/- [number]/+ [number]/set <number>",
 				   "Shows, hides or controls the mod tally counter."));
-			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 1, "hide/show/toggle/start/stop/startstop/reset/restart/split",
+			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 2, "hide/show/toggle/start/stop/startstop/reset/restart/split/set <mins>/set <mins>:<secs>",
 				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
-			Main.OnTickForThirdPartySoftwareOnly += Main_OnTickForThirdPartySoftwareOnly;
+			Main.OnTickForInternalCodeOnly += Main_OnTick;
+			// This event must be used because OnTickForThirdPartySoftwareOnly may be called many times between frames, or while paused.
 
 			if (File.Exists(Path.Combine(Main.SavePath, "accessoryData.json"))) {
 				using var reader = new JsonTextReader(new StreamReader(Path.Combine(Main.SavePath, "accessoryData.json")));
@@ -107,8 +116,11 @@ internal class StopwatchAndTallyCounter : PatchSet {
 		}
 	}
 
-	private static void Main_OnTickForThirdPartySoftwareOnly() {
-		if (Stopwatch.Running) Stopwatch.Time++;
+	private static void Main_OnTick() {
+		if (Stopwatch.Running) {
+			if (Stopwatch.CountDown) Stopwatch.Time--;
+			else Stopwatch.Time++;
+		}
 	}
 
 	public static void CommandCounter(Command command, string label, string[] args) {
@@ -117,10 +129,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			case "hide": Counter.Showing = false; break;
 			case "show": Counter.Showing = true; break;
 			case "toggle": Counter.Showing = !Counter.Showing; break;
-			case "-":
-			case "+":
-			case "=":
-			case "set":
+			case "-": case "+": case "=": case "set":
 				int n;
 				if (args.Length > 1) {
 					if (!int.TryParse(args[1], out n)) {
@@ -172,18 +181,45 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			case "reset":
 				Stopwatch.Showing = true;
 				Stopwatch.Running = false;
+				Stopwatch.CountDown = false;
 				Stopwatch.Time = 0;
 				Stopwatch.SplitTime = 0;
 				break;
 			case "restart":
 				Stopwatch.Showing = true;
 				Stopwatch.Running = true;
+				Stopwatch.CountDown = false;
 				Stopwatch.Time = 0;
 				Stopwatch.SplitTime = 0;
 				break;
 			case "split":
 				Stopwatch.Showing = true;
 				Stopwatch.SplitTime = Stopwatch.SplitTime != 0 ? 0 : Stopwatch.Time;
+				break;
+			case "set":
+				if (args.Length <= 1) goto default;
+
+				var tokens = args[1].Split(new[] { ' ', ':', '\'', '"', 'm', 's' }, 2, StringSplitOptions.RemoveEmptyEntries);
+				if (tokens.Length > 1) {
+					if (double.TryParse(tokens[0], out var mins) && double.TryParse(tokens[1], out var secs)) {
+						Stopwatch.Time = (int) Math.Round(mins * 3600 + secs * 60);
+					} else {
+						CommandManager.FailMessage("Invalid numbers.");
+						return;
+					}
+				} else {
+					if (double.TryParse(tokens[0], out var mins)) {
+						Stopwatch.Time = (int) Math.Round(mins * 3600);
+					} else {
+						CommandManager.FailMessage("Invalid numbers.");
+						return;
+					}
+				}
+
+				Stopwatch.Showing = true;
+				Stopwatch.Running = false;
+				Stopwatch.CountDown = true;
+				Stopwatch.SplitTime = 0;
 				break;
 			default:
 				command.ShowParametersFailMessage(label);
@@ -218,7 +254,10 @@ internal class StopwatchAndTallyCounter : PatchSet {
 							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
 
 							instructions.Insert(i - 1, Call(StopwatchAndTallyCounter.GetCounterTitle));
+
 							counterReplaced = true;
+							i = j + 6;
+							break;
 						}
 					}
 				} else if (instructions[i - 3].IsConstant(103)
@@ -243,7 +282,10 @@ internal class StopwatchAndTallyCounter : PatchSet {
 							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
 							
 							instructions.Insert(i - 1, Call(StopwatchAndTallyCounter.GetStopwatchTitle));
+
+							i = j + 6;
 							stopwatchReplaced = true;
+							break;
 						}
 					}
 				}
@@ -257,9 +299,18 @@ internal class StopwatchAndTallyCounter : PatchSet {
 
 		public static void Prefix() {
 			if (lastCharacterName is not null) {
-				saveData[lastCharacterName] = new() { Counter = Counter, Stopwatch = Stopwatch };
-				using var writer = new JsonTextWriter(new StreamWriter(Path.Combine(Main.SavePath, "accessoryData.json")));
-				new JsonSerializer().Serialize(writer, saveData);
+				if (Counter.IsEmpty && Stopwatch.IsEmpty)
+					saveData.Remove(lastCharacterName);
+				else
+					saveData[lastCharacterName] = new() { Counter = Counter, Stopwatch = Stopwatch };
+				var file = Path.Combine(Main.SavePath, "accessoryData.json");
+				if (saveData.Count == 0) {
+					if (File.Exists(file))
+						File.Delete(file);
+				} else {
+					using var writer = new JsonTextWriter(new StreamWriter(file));
+					new JsonSerializer().Serialize(writer, saveData);
+				}
 			}
 		}
 	}
