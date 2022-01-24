@@ -7,9 +7,9 @@ using System.Windows.Forms;
 
 using Microsoft.Win32;
 
-namespace TerrariaPatcher;
+namespace TerrariaPatcherCommon;
 
-public static class Utils {
+public static class CommonUtils {
 	public const string DEFAULT_TERRARIA_DIRECTORY = @"C:\Program Files (x86)\Steam\steamapps\common\Terraria";
 
 	public static string? GuiGetTerrariaExePath(string[] args) {

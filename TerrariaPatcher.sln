@@ -13,24 +13,53 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerrariaPatcherCommon", "TerrariaPatcherCommon\TerrariaPatcherCommon.csproj", "{411DB1A2-2C3F-420E-B54B-1057168DE377}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86
+		Extract|Any CPU = Extract|Any CPU
 		Extract|x86 = Extract|x86
+		Release|Any CPU = Release|Any CPU
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Debug|Any CPU.Build.0 = Debug|x86
 		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Debug|x86.ActiveCfg = Debug|x86
 		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Debug|x86.Build.0 = Debug|x86
+		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Extract|Any CPU.ActiveCfg = Release|x86
+		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Extract|Any CPU.Build.0 = Release|x86
 		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Extract|x86.ActiveCfg = Release|x86
+		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Release|Any CPU.ActiveCfg = Release|x86
+		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Release|Any CPU.Build.0 = Release|x86
 		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Release|x86.ActiveCfg = Release|x86
 		{92B18153-8E5F-4D30-9DC2-184B69CA99B6}.Release|x86.Build.0 = Release|x86
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Debug|Any CPU.Build.0 = Debug|x86
 		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Debug|x86.ActiveCfg = Debug|x86
 		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Debug|x86.Build.0 = Debug|x86
-		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Extract|x86.ActiveCfg = Debug|x86
-		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Extract|x86.Build.0 = Debug|x86
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Extract|Any CPU.ActiveCfg = Release|x86
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Extract|Any CPU.Build.0 = Release|x86
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Extract|x86.ActiveCfg = Debug|Any CPU
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Extract|x86.Build.0 = Debug|Any CPU
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Release|Any CPU.ActiveCfg = Release|x86
+		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Release|Any CPU.Build.0 = Release|x86
 		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Release|x86.ActiveCfg = Release|x86
 		{BA94EEB8-3AB6-429C-956A-C58EE5653E67}.Release|x86.Build.0 = Release|x86
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Debug|x86.Build.0 = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Extract|Any CPU.ActiveCfg = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Extract|Any CPU.Build.0 = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Extract|x86.ActiveCfg = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Extract|x86.Build.0 = Debug|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Release|Any CPU.Build.0 = Release|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Release|x86.ActiveCfg = Release|Any CPU
+		{411DB1A2-2C3F-420E-B54B-1057168DE377}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

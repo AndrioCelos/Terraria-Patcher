@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Windows.Forms;
 
-using TerrariaPatcher;
+using TerrariaPatcherCommon;
 
 namespace TerrariaExtractor;
 
@@ -21,7 +21,7 @@ internal static class Program {
 		if (!Directory.Exists(outputDir)) outputDir = ".";
 
 		try {
-			var exePath = Utils.GuiGetTerrariaExePath(args);
+			var exePath = CommonUtils.GuiGetTerrariaExePath(args);
 			var exeDir = Path.GetDirectoryName(exePath);
 			if (exePath is null) return 1;
 
@@ -30,7 +30,7 @@ internal static class Program {
 			if (File.Exists(Path.Combine(outputDir, "ReLogic.dll")))
 				MessageBox.Show("ReLogic.dll already exists. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			else {
-				Utils.ExtractResource(exePath, "Terraria.Libraries.ReLogic.ReLogic.dll", Path.Combine(outputDir, "ReLogic.dll"));
+				CommonUtils.ExtractResource(exePath, "Terraria.Libraries.ReLogic.ReLogic.dll", Path.Combine(outputDir, "ReLogic.dll"));
 				MessageBox.Show("Successfully extracted ReLogic.dll. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
 			return 0;

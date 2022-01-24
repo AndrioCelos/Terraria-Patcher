@@ -9,6 +9,8 @@ using System.Windows.Forms;
 
 using dnlib.DotNet;
 
+using TerrariaPatcherCommon;
+
 namespace TerrariaPatcher;
 
 internal static class Program {
@@ -26,11 +28,11 @@ internal static class Program {
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 
-		var exePath = Utils.GuiGetTerrariaExePath(args);
+		var exePath = CommonUtils.GuiGetTerrariaExePath(args);
 		var reLogicDllPath = Path.Combine(Path.GetDirectoryName(exePath), "ReLogic.dll");
 		if (exePath is null) return 1;
 
-		Utils.ExtractResource(exePath, "Terraria.Libraries.ReLogic.ReLogic.dll", reLogicDllPath);
+		CommonUtils.ExtractResource(exePath, "Terraria.Libraries.ReLogic.ReLogic.dll", reLogicDllPath);
 
 		TargetModules = new TargetModule[] {
 			new(exePath, Path.Combine(Path.GetDirectoryName(exePath), "Terraria.patched.exe")),
