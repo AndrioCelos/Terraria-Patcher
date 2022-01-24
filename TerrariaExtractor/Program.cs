@@ -17,14 +17,20 @@ internal static class Program {
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 
-		try {
-			var directory = Utils.GuiGetTerrariaDirectory(args);
-			if (directory is null) return 1;
+		var outputDir = Path.Combine("..", "..", "..", "..", "refs");
+		if (!Directory.Exists(outputDir)) outputDir = ".";
 
-			if (File.Exists(Path.Combine(directory, "ReLogic.dll")))
+		try {
+			var exePath = Utils.GuiGetTerrariaExePath(args);
+			var exeDir = Path.GetDirectoryName(exePath);
+			if (exePath is null) return 1;
+
+			if (!File.Exists(Path.Combine(outputDir, "Terraria.exe")))
+				File.Copy(exePath, Path.Combine(outputDir, "Terraria.exe"));
+			if (File.Exists(Path.Combine(outputDir, "ReLogic.dll")))
 				MessageBox.Show("ReLogic.dll already exists. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			else {
-				Utils.ExtractResource(directory, "Terraria.Libraries.ReLogic.ReLogic.dll", "ReLogic.dll");
+				Utils.ExtractResource(exePath, "Terraria.Libraries.ReLogic.ReLogic.dll", Path.Combine(outputDir, "ReLogic.dll"));
 				MessageBox.Show("Successfully extracted ReLogic.dll. Build the patcher now.", "Terraria Patcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
 			return 0;

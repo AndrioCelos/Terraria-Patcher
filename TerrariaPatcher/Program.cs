@@ -26,14 +26,15 @@ internal static class Program {
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 
-		var directory = Utils.GuiGetTerrariaDirectory(args);
-		if (directory is null) return 1;
+		var exePath = Utils.GuiGetTerrariaExePath(args);
+		var reLogicDllPath = Path.Combine(Path.GetDirectoryName(exePath), "ReLogic.dll");
+		if (exePath is null) return 1;
 
-		Utils.ExtractResource(directory, "Terraria.Libraries.ReLogic.ReLogic.dll", Path.Combine(directory, "ReLogic.dll"));
+		Utils.ExtractResource(exePath, "Terraria.Libraries.ReLogic.ReLogic.dll", reLogicDllPath);
 
 		TargetModules = new TargetModule[] {
-			new(Path.Combine(directory, "Terraria.exe"), Path.Combine(directory, "Terraria.patched.exe")),
-			new(Path.Combine(directory, "ReLogic.dll"), Path.Combine(directory, "ReLogic.patched.dll"))
+			new(exePath, Path.Combine(Path.GetDirectoryName(exePath), "Terraria.patched.exe")),
+			new(reLogicDllPath, Path.Combine(Path.GetDirectoryName(exePath), "ReLogic.patched.dll"))
 		};
 
 		AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;

@@ -52,7 +52,7 @@
       <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="ReLogic">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Terraria\ReLogic.dll</HintPath>
+      <HintPath>..\refs\ReLogic.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -67,7 +67,7 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Terraria">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Terraria\Terraria.exe</HintPath>
+      <HintPath>..\refs\Terraria.exe</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
