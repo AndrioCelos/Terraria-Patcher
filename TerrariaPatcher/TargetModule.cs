@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using dnlib.DotNet;
 
@@ -59,11 +60,23 @@ internal class TargetModule {
 			: this.ImportType(type, this.CurrentModuleDef.Import(type));
 	/// <summary>Copies the specified type and its base types from this module to the target module.</summary>
 	private TypeDef ImportType(Type type, ITypeDefOrRef typeDefOrRef) {
+		if (typeDefOrRef.DeclaringType is not null) throw new ArgumentException("Can't import a nested type. Consider importing the declaring type instead.");
+
 		var typeDef = typeDefOrRef switch {
 			TypeDef typeDef2 => typeDef2,
 			TypeRef typeRef => typeRef.ResolveThrow(this.currentModuleDef),
 			_ => throw new InvalidOperationException("Can't resolve added type"),
 		};
+
+		var existingTypeDef = this.ModuleDef.Types.FirstOrDefault(t => t.FullName == typeDef.FullName);
+		if (existingTypeDef is not null) {
+			if (existingTypeDef.CustomAttributes.Any(a => a.AttributeType.Name == nameof(CompilerGeneratedAttribute)))
+				typeDef.Name += Guid.NewGuid().ToString();
+			else {
+				this.AddedTypes[type] = existingTypeDef;
+				return existingTypeDef;
+			}
+		}
 
 		if (type.BaseType is not null && type.BaseType.Module == type.Module)
 			this.ImportType(type.BaseType, typeDef.BaseType);
@@ -80,8 +93,6 @@ internal class TargetModule {
 		if (typeDef.Module == this.ModuleDef) return;
 		if (typeDef.Module != this.currentModuleDef) throw new ArgumentException("Can import only types from this module.");
 		this.currentModuleDef.Types.Remove(typeDef);
-		if (this.ModuleDef.Types.Any(t => t.FullName == typeDef.FullName))
-			typeDef.Name += Guid.NewGuid().ToString();
 		this.ModuleDef.Types.Add(typeDef);
 		this.AddedTypes[type] = typeDef;
 	}

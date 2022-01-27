@@ -54,8 +54,28 @@ public abstract class PatchSet {
 
 	public void Apply(PatchProgressHandler? progressCallback) {
 		var targetModule = Program.GetTargetModule(this.TargetModuleName);
+
+		var patchVersionAttributeType = ImportType(typeof(PatchVersionAttribute), this.TargetModuleName);
+
 		var copyPatchSetType = targetModule.ModuleDef.Types.FirstOrDefault(t => t.Namespace == this.GetType().Namespace && t.Name == this.GetType().Name);
-		if (copyPatchSetType is not null) return;  // Patch seems to have already been applied. Trying to apply it again would probably fail.
+		if (copyPatchSetType is not null) {
+			// Patch seems to have already been applied. Trying to apply it again would probably fail.
+			var patchVersionAttribute = copyPatchSetType.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == patchVersionAttributeType.FullName);
+			Version existingVersion;
+			if (patchVersionAttribute is not null) {
+				var args = patchVersionAttribute.ConstructorArguments;
+				existingVersion = args.Count switch {
+					2 => new Version(args[0].Value as int? ?? 0, args[1].Value as int? ?? 0),
+					3 => new Version(args[0].Value as int? ?? 0, args[1].Value as int? ?? 0, args[2].Value as int? ?? 0),
+					4 => new Version(args[0].Value as int? ?? 0, args[1].Value as int? ?? 0, args[2].Value as int? ?? 0, args[3].Value as int? ?? 0),
+					_ => new()
+				};
+			} else {
+				existingVersion = new();
+			}
+			if (existingVersion < this.Version) throw new InvalidOperationException($"Cannot apply the patch when an older version ({this.Name} v{existingVersion}) is already installed.");
+			return;
+		}
 
 		targetModule.Modified = true;
 		this.BeforeApply();
@@ -65,6 +85,14 @@ public abstract class PatchSet {
 		copyPatchSetType = new TypeDefUser(this.GetType().Namespace, this.GetType().Name, targetModule.ModuleDef.CorLibTypes.Object.TypeDefOrRef) {
 			Attributes = TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed
 		};
+		if (this.Version is not null && this.Version.Minor >= 0) {
+			var attributeArgs = new CAArgument[this.Version.Revision >= 0 ? 4 : this.Version.Build >= 0 ? 3 : 2];
+			if (attributeArgs.Length > 0) attributeArgs[0] = new(targetModule.ModuleDef.CorLibTypes.Int32, this.Version.Major);
+			if (attributeArgs.Length > 1) attributeArgs[1] = new(targetModule.ModuleDef.CorLibTypes.Int32, this.Version.Minor);
+			if (attributeArgs.Length > 2) attributeArgs[2] = new(targetModule.ModuleDef.CorLibTypes.Int32, this.Version.Build);
+			if (attributeArgs.Length > 3) attributeArgs[3] = new(targetModule.ModuleDef.CorLibTypes.Int32, this.Version.Revision);
+			copyPatchSetType.CustomAttributes.Add(new(patchVersionAttributeType.FindInstanceConstructors().FirstOrDefault(c => c.Parameters.Count == attributeArgs.Length + 1), attributeArgs));
+		}
 		targetModule.ModuleDef.Types.Add(copyPatchSetType);
 
 		int i = 0;

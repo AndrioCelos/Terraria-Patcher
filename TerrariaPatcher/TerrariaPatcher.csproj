@@ -88,6 +88,7 @@
     <Compile Include="PatchSets\ColouredChatNames.cs" />
     <Compile Include="PatchSets\ColouredMetalDetector.cs" />
     <Compile Include="PatchSets\Commands.cs" />
+    <Compile Include="PatchSets\ForTheWorthyBestiaryMod.cs" />
     <Compile Include="PatchSets\InfoAccessoryDisplayFix.cs" />
     <Compile Include="PatchSets\RemoveSteamAchievements.cs" />
     <Compile Include="PatchSets\ShootFix.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="PatchSets\Watch24Hour.cs" />
     <Compile Include="PatchSets\WorldInfo.cs" />
     <Compile Include="PatchTarget.cs" />
+    <Compile Include="PatchVersionAttribute.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReversePatchAttribute.cs" />
