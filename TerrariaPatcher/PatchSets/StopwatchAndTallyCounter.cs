@@ -27,6 +27,9 @@ internal class StopwatchAndTallyCounter : PatchSet {
 		public bool CountDown { get; set; }
 		public long Time { get; set; }
 		public long SplitTime { get; set; }
+		[JsonIgnore]
+		public bool BossMode { get; set; }
+
 		public bool IsEmpty => !this.Showing && !this.Running && !this.CountDown && this.Time == 0 && this.SplitTime == 0;
 	}
 
@@ -42,7 +45,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	}
 
 	public override string Name => "Stopwatch and Tally Counter";
-	public override Version Version => new(2, 0);
+	public override Version Version => new(2, 1);
 	public override string Description => "Use the stopwatch and tally counter as an actual stopwatch and tally counter with client commands.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories), typeof(Commands) };
 
@@ -92,7 +95,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 		public static void Prefix() {
 			CommandManager.Commands.Add("counter", new(CommandCounter, 1, 2, "hide/show/toggle/- [number]/+ [number]/set <number>",
 				   "Shows, hides or controls the mod tally counter."));
-			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 2, "hide/show/toggle/start/stop/startstop/reset/restart/split/set <mins>/set <mins>:<secs>",
+			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 2, "hide/show/toggle/start/stop/startstop/reset/restart/split/set <mins>/set <mins>:<secs>/boss",
 				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
 			Main.OnTickForInternalCodeOnly += Main_OnTick;
@@ -117,6 +120,24 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	}
 
 	private static void Main_OnTick() {
+		if (Stopwatch.BossMode) {
+			var anyBossesAlive = false;
+			for (int i = 0; i < Main.npc.Length; i++) {
+				var npc = Main.npc[i];
+				if (npc.active && (npc.boss ? npc.netID != NPCID.MartianSaucer : npc.netID == NPCID.EaterofWorldsHead)) {
+					anyBossesAlive = true;
+					break;
+				}
+			}
+			if (Stopwatch.Running) {
+				if (!anyBossesAlive) {
+					Stopwatch.Running = false;
+					Stopwatch.BossMode = false;
+				}
+			} else {
+				if (anyBossesAlive) Stopwatch.Running = true;
+			}
+		}
 		if (Stopwatch.Running) {
 			if (Stopwatch.CountDown) Stopwatch.Time--;
 			else Stopwatch.Time++;
@@ -221,6 +242,15 @@ internal class StopwatchAndTallyCounter : PatchSet {
 				Stopwatch.CountDown = true;
 				Stopwatch.SplitTime = 0;
 				break;
+			case "boss":
+				if (Stopwatch.BossMode) {
+					Stopwatch.BossMode = false;
+					CommandManager.SuccessMessage("Boss mode is now off.");
+				} else {
+					Stopwatch.BossMode = true;
+					CommandManager.SuccessMessage("Boss mode is now on. The stopwatch will be started and stopped according to whether any bosses are alive.");
+				}
+				return;
 			default:
 				command.ShowParametersFailMessage(label);
 				return;
