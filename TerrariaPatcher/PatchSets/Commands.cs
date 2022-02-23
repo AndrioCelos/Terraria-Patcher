@@ -17,7 +17,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class Commands : PatchSet {
 	public override string Name => "Client Commands";
-	public override Version Version => new(1, 1);
+	public override Version Version => new(1, 2);
 	public override string Description => "Adds client commands, used with the . prefix in chat or custom key bindings. See the readme file for more information.";
 	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(ModManagerMod), typeof(WordWrapFix) };
 

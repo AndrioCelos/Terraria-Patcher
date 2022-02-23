@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using Terraria;
 using Terraria.Audio;
 using Terraria.Chat;
+using Terraria.GameInput;
 using Terraria.UI.Chat;
 
 namespace TerrariaPatcher.Mods;
@@ -189,6 +190,8 @@ internal static class CommandManager {
 	}
 
 	public static void HandleInput(IEnumerable<Keys> pressedKeys) {
+		if (Main.drawingPlayerChat || Main.editSign || Main.editChest || Main.blockInput) return;
+
 		currentKeys.Clear();
 		currentModifiers = 0;
 		foreach (var key in pressedKeys) {
