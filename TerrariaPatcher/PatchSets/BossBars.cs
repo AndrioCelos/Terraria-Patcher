@@ -18,7 +18,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class BossBars : PatchSet {
 	public override string Name => "Better Boss Bars";
-	public override Version Version => new(1, 1);
+	public override Version Version => new(1, 2);
 	public override string Description => "Adds text to boss bars with the name of the boss and its exact life remaining, and adds a boss bar for the Eternia Crystal.";
 
 	internal class BossBarSystemPatch : PrefixPatch {
@@ -118,15 +118,15 @@ internal class BossBars : PatchSet {
 	internal class LunarPillarDraw : PrefixPatch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(LunarPillarBigProgessBar), "Draw");
 		public static bool Prefix(ref BigProgressBarInfo info, SpriteBatch spriteBatch, int ____headIndex) {
-			var shield = ____headIndex switch {
+			var texture = TextureAssets.NpcHeadBoss[____headIndex].Value;
+			var npc = Main.npc[info.npcIndexToAimAt];
+			var shield = npc.netID switch {
 				NPCID.LunarTowerNebula => NPC.ShieldStrengthTowerNebula,
 				NPCID.LunarTowerSolar => NPC.ShieldStrengthTowerSolar,
 				NPCID.LunarTowerStardust => NPC.ShieldStrengthTowerStardust,
 				NPCID.LunarTowerVortex => NPC.ShieldStrengthTowerVortex,
 				_ => 0
 			};
-			var texture = TextureAssets.NpcHeadBoss[NPCID.Sets.BossHeadTextures[____headIndex]].Value;
-			var npc = Main.npc[info.npcIndexToAimAt];
 			DrawFancyBar(spriteBatch, texture, npc.TypeName, npc.life, npc.lifeMax, shield, NPC.ShieldStrengthTowerMax);
 			return Program.SKIP_ORIGINAL;
 		}
