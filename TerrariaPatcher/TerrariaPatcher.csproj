@@ -88,6 +88,7 @@
     <Compile Include="PatchSets\ColouredChatNames.cs" />
     <Compile Include="PatchSets\ColouredMetalDetector.cs" />
     <Compile Include="PatchSets\Commands.cs" />
+    <Compile Include="PatchSets\LunarPillarNerf.cs" />
     <Compile Include="PatchSets\MetalDetectorMod.cs" />
     <Compile Include="PatchSets\ForTheWorthyBestiaryMod.cs" />
     <Compile Include="PatchSets\InfoAccessoryDisplayFix.cs" />
