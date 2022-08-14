@@ -31,7 +31,7 @@ public partial class MainForm : Form {
 		updatingSelectAll = true;
 		foreach (var patchSet in patchSets) {
 			configFile.PatchOptions.TryGetValue(patchSet.GetType().Name, out var configEntry);
-			this.patchList.Items.Add(patchSet, configEntry?.Enabled ?? true);
+			this.patchList.Items.Add(patchSet, configEntry?.Enabled ?? false);
 
 			var configType = patchSet.GetType().GetNestedTypes().Where(t => !t.IsAbstract && typeof(IPatchSetConfig).IsAssignableFrom(t)).FirstOrDefault();
 			if (configType is not null) {
