@@ -46,10 +46,37 @@ public abstract class PatchSet {
 	protected static TypeDef ImportType(Type type, string targetModule)
 		=> Program.TargetModules.First(t => t.ModuleDef.Assembly.Name == targetModule).ImportType(type);
 
-	protected static void CopyFileToOutputDirectory(string fileName) {
-		var outPath = Path.Combine(Path.GetDirectoryName(Program.TargetModules[0].OutputPath), fileName);
-		if (!File.Exists(outPath))
-			File.Copy(fileName, outPath);
+	protected static void CopyFileToOutputDirectory(string path)
+		=> CopyFileToOutputDirectory(path, false);
+	protected static void CopyFileToOutputDirectory(string path, bool overwrite) {
+		var outPath = Path.Combine(Path.GetDirectoryName(Program.TargetModules[0].OutputPath), path);
+		if (overwrite || !File.Exists(outPath))
+			File.Copy(path, outPath, overwrite);
+	}
+	protected static void CopyFileToOutputDirectory(Stream stream, string outputFileName)
+		=> CopyFileToOutputDirectory(stream, outputFileName, false);
+	protected static void CopyFileToOutputDirectory(Stream stream, string outputFileName, bool overwrite) {
+		var outPath = Path.Combine(Path.GetDirectoryName(Program.TargetModules[0].OutputPath), outputFileName);
+		if (overwrite || !File.Exists(outPath)) {
+			using var outStream = File.Open(outPath, FileMode.Create, FileAccess.Write);
+			stream.CopyTo(outStream);
+		}
+	}
+	protected static void CopyFileToOutputDirectory(byte[] bytes, string outputFileName)
+		=> CopyFileToOutputDirectory(bytes, outputFileName, false);
+	protected static void CopyFileToOutputDirectory(ArraySegment<byte> bytes, string outputFileName)
+		=> CopyFileToOutputDirectory(bytes, outputFileName, false);
+	protected static void CopyFileToOutputDirectory(byte[] bytes, string outputFileName, bool overwrite) {
+		var outPath = Path.Combine(Path.GetDirectoryName(Program.TargetModules[0].OutputPath), outputFileName);
+		if (overwrite || !File.Exists(outPath))
+			File.WriteAllBytes(outPath, bytes);
+	}
+	protected static void CopyFileToOutputDirectory(ArraySegment<byte> bytes, string outputFileName, bool overwrite) {
+		var outPath = Path.Combine(Path.GetDirectoryName(Program.TargetModules[0].OutputPath), outputFileName);
+		if (overwrite || !File.Exists(outPath)) {
+			using var outStream = File.Open(outPath, FileMode.Create, FileAccess.Write);
+			outStream.Write(bytes.Array, bytes.Offset, bytes.Count);
+		}
 	}
 
 	public void Apply(PatchProgressHandler? progressCallback) {
