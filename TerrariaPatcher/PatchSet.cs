@@ -177,12 +177,27 @@ public abstract class PatchSet {
 	}
 
 	private void CopyStaticMembers(Type originalType, TypeDef originalTypeDef, TypeDef copyTypeDef) {
+		// Find nested types that must not be copied because they contain compiler-generated delegates that are used at patch time only.
+		// TODO: this may fail if it also contains run-time compiler-generated delegates.
+		var nestedTypesThatMustNotBeCopied = new HashSet<string>();
+		var patchMethodBodyMethod = originalTypeDef.FindMethod(nameof(Patch.PatchMethodBody));
+		if (patchMethodBodyMethod != null) {
+			foreach (var instruction in patchMethodBodyMethod.Body.Instructions) {
+				if (instruction.Is(Code.Stsfld) && instruction.Operand is FieldDef field
+					&& field.DeclaringType.CustomAttributes.Any(a => a.AttributeType.Name == "CompilerGeneratedAttribute")) {
+					nestedTypesThatMustNotBeCopied.Add(field.DeclaringType.Name);
+				}
+			}
+		}
+
 		foreach (var type in originalType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
 			if (type.GetCustomAttribute<NoCopyToTargetAttribute>() is null
+				&& !nestedTypesThatMustNotBeCopied.Contains(type.Name)
 				&& !typeof(IPatchSetConfig).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type)
-				&& !typeof(Patch).IsAssignableFrom(type) && !typeof(IEnumerable<MethodDef>).IsAssignableFrom(type))
+				&& !typeof(Patch).IsAssignableFrom(type)) {
 				// Skip MethodDef iterator types.
 				originalTypeDef.Module.Import(type).ResolveTypeDefThrow().DeclaringType = copyTypeDef;
+			}
 		}
 		foreach (var property in originalTypeDef.Properties.Where(p => (p.GetMethod ?? p.SetMethod).IsStatic
 			&& GetCustomAttribute(p.CustomAttributes, typeof(NoCopyToTargetAttribute)) is null).ToList()) {
