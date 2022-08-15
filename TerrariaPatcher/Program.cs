@@ -51,10 +51,17 @@ internal static class Program {
 
 	private static Assembly? CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args) {
 		if (TargetModules is not null) {
+			var assemblyName = new AssemblyName(args.Name).Name;
+			// Include the patch target assemblies.
 			foreach (var targetModule in TargetModules) {
-				if (args.Name.Contains(Path.GetFileNameWithoutExtension(targetModule.InputPath)))
+				if (assemblyName == Path.GetFileNameWithoutExtension(targetModule.InputPath))
 					return Assembly.LoadFrom(targetModule.InputPath);
 			}
+			// Include other assembles that are embedded in Terraria.
+			var terrariaResource = TargetModules[0].ModuleDef.Resources.OfType<EmbeddedResource>()
+				.FirstOrDefault(r => r.Name.EndsWith($"{assemblyName}.dll"));
+			if (terrariaResource != null)
+				return Assembly.Load(terrariaResource.CreateReader().ToArray());
 		}
 		return null;
 	}
