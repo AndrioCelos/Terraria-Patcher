@@ -95,7 +95,7 @@ public partial class MainForm : Form {
 			for (var i = 0; i < this.patchList.Items.Count; i++) {
 				var patchSet = (PatchSet) this.patchList.Items[i];
 				var options = new ConfigFile.PatchOptionsEntry() { Enabled = this.patchList.GetItemChecked(i), Config = this.patchConfigs.TryGetValue(patchSet, out var patchConfig) ? patchConfig : null };
-				if (!options.Enabled || options.Config is not null)
+				if (options.Enabled || options.Config is not null)
 					configFile.PatchOptions[patchSet.GetType().Name] = options;
 			}
 			using var writer = new JsonTextWriter(new StreamWriter("config.json"));
