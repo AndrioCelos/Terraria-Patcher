@@ -10,11 +10,18 @@ using Microsoft.Win32;
 namespace TerrariaPatcherCommon;
 
 public static class CommonUtils {
+	// TODO: what about the GOG version and Mac/Linux installations?
 	public const string DEFAULT_TERRARIA_DIRECTORY = @"C:\Program Files (x86)\Steam\steamapps\common\Terraria";
 
 	public static string? GuiGetTerrariaExePath(string[] args) {
 		if (args.Length > 0 && Directory.Exists(args[0]) && File.Exists(Path.Combine(args[0], "Terraria.exe")))
 			return Path.Combine(args[0], "Terraria.exe");
+#if !DEBUG
+		// Don't check the working directory in a debug build to avoid a false positives if it's the reference.
+		// The reference shouldn't be copied, but let's be safe anyway.
+		else if (File.Exists("Terraria.exe"))
+			return ".";
+#endif
 		else if (Environment.OSVersion.Platform == PlatformID.Win32NT && GetTerrariaDirectoryFromRegistry() is string path
 			&& File.Exists(Path.Combine(path, "Terraria.exe")))
 			return Path.Combine(path, "Terraria.exe");
