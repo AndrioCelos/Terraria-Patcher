@@ -18,7 +18,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class StackLimitMod : PatchSet {
 	public override string Name => "Stack Limit";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Adds a client command to limit the number of items to buy, duplicate or split off a stack.";
 	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Commands), typeof(ModManagerMod) };
 
@@ -80,9 +80,6 @@ internal class StackLimitMod : PatchSet {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(ItemSlot), "RightClick", typeof(Item[]), typeof(int), typeof(int));
 	}
 	internal class RightClickPatch2 : RightClickPatch {
-		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(ItemSlot), "RightClick_FindSpecialActions");
-	}
-	internal class RightClickPatch3 : RightClickPatch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(ItemSlot), "HandleShopSlot");
 	}
 

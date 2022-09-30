@@ -11,7 +11,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class InvasionProgress : PatchSet {
 	public override string Name => "Invasion Progress";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Changes the invasion progress text to show the exact number of points left, and time remaining in Old One's Army intermissions.";
 
 	internal class InvasionProgressPatch : Patch {
@@ -50,16 +50,8 @@ internal class InvasionProgress : PatchSet {
 					instructions[i].Operand = null;
 					instructions.Insert(i + 1, Call(GetProgressString));
 					i += 2;
-					var foundStLoc = false;
-					while (true) {
-						if (instructions[i].IsStloc()) {
-							if (!foundStLoc)
-								foundStLoc = true;
-							else
-								break;
-						}
+					while (!instructions[i].IsStloc())
 						instructions.RemoveAt(i);
-					}
 					++replacements;
 				}
 			}

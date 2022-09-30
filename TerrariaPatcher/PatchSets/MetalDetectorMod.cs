@@ -1,10 +1,7 @@
 ﻿#nullable enable
 
 using System;
-
-using Terraria.GameContent.Bestiary;
 using Terraria.ID;
-using Terraria.UI;
 using Terraria;
 
 namespace TerrariaPatcher.PatchSets;

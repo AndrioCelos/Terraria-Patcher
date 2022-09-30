@@ -14,7 +14,6 @@ using Newtonsoft.Json;
 using Terraria;
 using Terraria.Audio;
 using Terraria.Chat;
-using Terraria.GameInput;
 using Terraria.UI.Chat;
 
 namespace TerrariaPatcher.Mods;
