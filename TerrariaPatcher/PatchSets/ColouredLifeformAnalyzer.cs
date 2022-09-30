@@ -15,11 +15,10 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class ColouredLifeformAnalyzer : PatchSet {
 	public override string Name => "Coloured Lifeform Analyzer";
-	public override Version Version => new(1, 1);
+	public override Version Version => new(1, 2);
 	public override string Description => "Colours the lifeform analyzer text depending on the detected lifeform.";
-	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories) };
 
-	private static Color Gray => new(130, 130, 130);
+	private static Color Gray => new(100, 100, 100);
 	private static Color Blue => new(150, 150, 255);
 	private static Color Green => new(150, 255, 150);
 	private static Color Orange => new(255, 200, 150);
@@ -32,6 +31,7 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 	private static Color Red => new(255, 40, 100);
 	private static Color Purple => new(180, 40, 255);
 	private static Color QuestItemColour => new(255, 175, 0);
+	private static Color Gold => new(255, 231, 69);
 
 	private static readonly Dictionary<int, Color> NpcColours = new() {
 		{ NPCID.Pinky               , Pink },
@@ -79,25 +79,25 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 		{ NPCID.BloodEelHead        , LightRed },
 		{ NPCID.Gnome               , Blue },
 		{ NPCID.IceMimic            , LightRed },
-		{ NPCID.GoldenSlime         , Orange },
+		{ NPCID.GoldenSlime         , Gold },
 		{ NPCID.TruffleWorm         , LightPurple },
-		{ NPCID.GoldBird            , Orange },
-		{ NPCID.GoldBunny           , Orange },
-		{ NPCID.GoldButterfly       , Orange },
-		{ NPCID.GoldFrog            , Orange },
-		{ NPCID.GoldGrasshopper     , Orange },
-		{ NPCID.GoldMouse           , Orange },
-		{ NPCID.GoldWorm            , Orange },
-		{ NPCID.SquirrelGold        , Orange },
+		{ NPCID.GoldBird            , Gold },
+		{ NPCID.GoldBunny           , Gold },
+		{ NPCID.GoldButterfly       , Gold },
+		{ NPCID.GoldFrog            , Gold },
+		{ NPCID.GoldGrasshopper     , Gold },
+		{ NPCID.GoldMouse           , Gold },
+		{ NPCID.GoldWorm            , Gold },
+		{ NPCID.SquirrelGold        , Gold },
 		{ NPCID.FairyCritterPink    , Pink },
 		{ NPCID.FairyCritterGreen   , Green },
 		{ NPCID.FairyCritterBlue    , Blue },
-		{ NPCID.GoldGoldfish        , Orange },
-		{ NPCID.GoldGoldfishWalker  , Orange },
-		{ NPCID.GoldDragonfly       , Orange },
-		{ NPCID.GoldLadyBug         , Orange },
-		{ NPCID.GoldWaterStrider    , Orange },
-		{ NPCID.GoldSeahorse        , Orange },
+		{ NPCID.GoldGoldfish        , Gold },
+		{ NPCID.GoldGoldfishWalker  , Gold },
+		{ NPCID.GoldDragonfly       , Gold },
+		{ NPCID.GoldLadyBug         , Gold },
+		{ NPCID.GoldWaterStrider    , Gold },
+		{ NPCID.GoldSeahorse        , Gold },
 		{ NPCID.EmpressButterfly    , LightPurple },
 		{ NPCID.BoundGoblin         , Green },
 		{ NPCID.BoundWizard         , LightPurple },
@@ -109,52 +109,36 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 		{ NPCID.GolferRescue        , Green }
 	};
 
-	internal static void GetDisplayColour(int npcIndex, ref Color infoColour) {
+	internal static void GetDisplayColour(int npcIndex, ref Color infoColour, ref Color shadowColour) {
 		var npc = npcIndex >= 0 && npcIndex < Main.npc.Length ? Main.npc[npcIndex] : null;
-		var color = npc is null || !npc.active ? Gray
-			: NpcColours.TryGetValue(npc.netID, out var color1) ? color1
-			: Color.White;
-		infoColour.R = (byte) (infoColour.R * color.R / 255);
-		infoColour.G = (byte) (infoColour.G * color.G / 255);
-		infoColour.B = (byte) (infoColour.B * color.B / 255);
-		infoColour.A = (byte) (infoColour.A * color.A / 255);
+		if (npc != null && npc.active) {
+			var color = NpcColours.TryGetValue(npc.netID, out var color1) ? color1 : Color.White;
+			infoColour.R = (byte) (infoColour.R * color.R / 255);
+			infoColour.G = (byte) (infoColour.G * color.G / 255);
+			infoColour.B = (byte) (infoColour.B * color.B / 255);
+			infoColour.A = (byte) (infoColour.A * color.A / 255);
+			shadowColour = infoColour * 0.1f;
+			shadowColour.A = 255;
+		}
 	}
 
 	internal class DrawInfoAccsPatch : Patch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "DrawInfoAccs");
 
 		public override void PatchMethodBody(MethodDef method) {
-			// Replace the code after `text3 = Lang.inter[105].Value` that builds the display string.
+			// Insert code after the call to DrawInfoAccs_AdjustInfoTextColorsForNPC.
 			var instructions = method.Body.Instructions;
-			for (int i = 3; i < instructions.Count; i++) {
-				if (instructions[i - 3].IsConstant(105)
-					&& instructions[i].IsStloc()) {
-
-					for (i += 3; i < instructions.Count; i++) {
-						if (instructions[i - 2].Is(Code.Ldloc_S)
-							&& instructions[i - 1].IsConstant(0)
-							&& instructions[i].Is(Code.Blt_S)) {
-
-							var refInstruction = instructions[i - 2];
-							var newRefInstruction = new Instruction(OpCodes.Ldloc_S, instructions[i - 2].Operand);
-							
-							var foundBranch = false;
-							for (var j = i - 3; j >= 0; j--) {
-								if (instructions[j].Operand == refInstruction) {
-									foundBranch = true;
-									instructions[j].Operand = newRefInstruction;
-									break;
-								}
-							}
-							if (!foundBranch) throw new ArgumentException("Couldn't find branch to replace.");
-
-							instructions.Insert(i - 2, newRefInstruction);
-							instructions.Insert(i - 1, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessories.InfoColourLocal));
-							instructions.Insert(i, Call(ColouredLifeformAnalyzer.GetDisplayColour));
-
-							return;
-						}
-					}
+			for (int i = 4; i < instructions.Count; i++) {
+				if (instructions[i - 4].IsLdloc() && instructions[i - 4].Operand is Local local0
+					&& instructions[i - 3].Is(Code.Ldelem_Ref)
+					&& instructions[i - 2].Is(Code.Ldloca_S) && instructions[i - 2].Operand is Local local1
+					&& instructions[i - 1].Is(Code.Ldloca_S) && instructions[i - 1].Operand is Local local2
+					&& instructions[i].Is(Code.Call) && ((IMethod) instructions[i].Operand).Name == "DrawInfoAccs_AdjustInfoTextColorsForNPC") {
+					instructions.Insert(i + 1, OpCodes.Ldloc_S.ToInstruction(local0));
+					instructions.Insert(i + 2, OpCodes.Ldloca_S.ToInstruction(local1));
+					instructions.Insert(i + 3, OpCodes.Ldloca_S.ToInstruction(local2));
+					instructions.Insert(i + 4, Call(ColouredLifeformAnalyzer.GetDisplayColour));
+					return;
 				}
 			}
 			throw new ArgumentException("Couldn't find code to replace.");

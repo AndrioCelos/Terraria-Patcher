@@ -45,9 +45,9 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	}
 
 	public override string Name => "Stopwatch and Tally Counter";
-	public override Version Version => new(2, 1);
+	public override Version Version => new(2, 2);
 	public override string Description => "Use the stopwatch and tally counter as an actual stopwatch and tally counter with client commands.";
-	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories), typeof(Commands) };
+	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
 
 	public static CounterState Counter = new();
 	public static StopwatchState Stopwatch = new();
@@ -57,18 +57,20 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	internal static string GetCounterTitle(string normalTitle) => Counter.Showing ? Lang.GetItemName(ItemID.TallyCounter).Value : normalTitle;
 	internal static string GetStopwatchTitle(string normalTitle) => Stopwatch.Showing ? Lang.GetItemName(ItemID.Stopwatch).Value : normalTitle;
 
-	internal static string? GetCounterDisplayString(ref Color infoColour) {
+	internal static string? GetCounterDisplayString(ref Color infoColour, ref Color shadowColour) {
 		if (Counter.Showing) {
 			infoColour.R = (byte) (infoColour.R * ModManager.AccentColor.R / 255);
 			infoColour.G = (byte) (infoColour.G * ModManager.AccentColor.G / 255);
 			infoColour.B = (byte) (infoColour.B * ModManager.AccentColor.B / 255);
 			infoColour.A = (byte) (infoColour.A * ModManager.AccentColor.A / 255);
+			shadowColour = infoColour * 0.1f;
+			shadowColour.A = 255;
 			return $"Count: {Counter.Count}";
 		} else
 			return null;
 	}
 
-	internal static string? GetStopwatchDisplayString(ref Color infoColour) {
+	internal static string? GetStopwatchDisplayString(ref Color infoColour, ref Color shadowColour) {
 		if (Stopwatch.Showing) {
 			bool minus = false;
 			var time = Stopwatch.SplitTime != 0 ? Stopwatch.SplitTime : Stopwatch.Time;
@@ -85,7 +87,9 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			infoColour.G = (byte) (infoColour.G * ModManager.AccentColor.G / 255);
 			infoColour.B = (byte) (infoColour.B * ModManager.AccentColor.B / 255);
 			infoColour.A = (byte) (infoColour.A * ModManager.AccentColor.A / 255);
-			
+			shadowColour = infoColour * 0.1f;
+			shadowColour.A = 255;
+
 			return $"{(minus ? "-" : "")}{minutes:00}' {seconds:00}.{cs:00}\"";
 		} else
 			return null;
@@ -98,6 +102,8 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			CommandManager.Commands.Add("stopwatch", new(CommandStopwatch, 1, 2, "hide/show/toggle/start/stop/startstop/reset/restart/split/set <mins>/set <mins>:<secs>/boss",
 				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
+
+			Terraria.Program.SavePath = Environment.CurrentDirectory;  // This must be set to something; otherwise the Main static constructor will crash.
 			Main.OnTickForInternalCodeOnly += Main_OnTick;
 			// This event must be used because OnTickForThirdPartySoftwareOnly may be called many times between frames, or while paused.
 
@@ -274,14 +280,15 @@ internal class StopwatchAndTallyCounter : PatchSet {
 						if (instructions[j].Is(Code.Br) || instructions[j].Is(Code.Br_S)) {
 							// Copy this jump if we want to override the display text.
 							var jumpInstruction = instructions[j].Operand;
-							var local = instructions[j - 1].GetLocal(method.Body.Variables);
+							var local = instructions[j - 3].GetLocal(method.Body.Variables);
 
 							// Now add our code.
-							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessories.InfoColourLocal));
-							instructions.Insert(i + 1, Call(StopwatchAndTallyCounter.GetCounterDisplayString));
-							instructions.Insert(i + 2, OpCodes.Stloc_S.ToInstruction(local));
-							instructions.Insert(i + 3, OpCodes.Ldloc_S.ToInstruction(local));
-							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
+							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoColourLocal));
+							instructions.Insert(i + 1, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoShadowColourLocal));
+							instructions.Insert(i + 2, Call(StopwatchAndTallyCounter.GetCounterDisplayString));
+							instructions.Insert(i + 3, OpCodes.Stloc_S.ToInstruction(local));
+							instructions.Insert(i + 4, OpCodes.Ldloc_S.ToInstruction(local));
+							instructions.Insert(i + 5, new(OpCodes.Brtrue, jumpInstruction));
 
 							instructions.Insert(i - 1, Call(StopwatchAndTallyCounter.GetCounterTitle));
 
@@ -305,11 +312,12 @@ internal class StopwatchAndTallyCounter : PatchSet {
 							var local = instructions[j].GetLocal(method.Body.Variables);
 
 							// Now add our code.
-							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessories.InfoColourLocal));
-							instructions.Insert(i + 1, Call(StopwatchAndTallyCounter.GetStopwatchDisplayString));
-							instructions.Insert(i + 2, OpCodes.Stloc_S.ToInstruction(local));
-							instructions.Insert(i + 3, OpCodes.Ldloc_S.ToInstruction(local));
-							instructions.Insert(i + 4, new(OpCodes.Brtrue, jumpInstruction));
+							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoColourLocal));
+							instructions.Insert(i + 1, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoShadowColourLocal));
+							instructions.Insert(i + 2, Call(StopwatchAndTallyCounter.GetStopwatchDisplayString));
+							instructions.Insert(i + 3, OpCodes.Stloc_S.ToInstruction(local));
+							instructions.Insert(i + 4, OpCodes.Ldloc_S.ToInstruction(local));
+							instructions.Insert(i + 5, new(OpCodes.Brtrue, jumpInstruction));
 							
 							instructions.Insert(i - 1, Call(StopwatchAndTallyCounter.GetStopwatchTitle));
 

@@ -15,9 +15,8 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class ColouredMetalDetector : PatchSet {
 	public override string Name => "Coloured Metal Detector";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Colours the metal detector text depending on the detected treasure.";
-	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(ColouredInfoAccessories) };
 
 	private static Color Gray => new(130, 130, 130);
 	private static Color Blue => new(150, 150, 255);
@@ -64,21 +63,27 @@ internal class ColouredMetalDetector : PatchSet {
 		{ TileID.LifeFruit      , Yellow }
 	};
 
-	internal static void GetDisplayColour(int tileType, ref Color infoColour) {
-		var color = TileColours.TryGetValue(tileType, out var color1) ? color1 : Gray;
-		infoColour.R = (byte) (infoColour.R * color.R / 255);
-		infoColour.G = (byte) (infoColour.G * color.G / 255);
-		infoColour.B = (byte) (infoColour.B * color.B / 255);
-		infoColour.A = (byte) (infoColour.A * color.A / 255);
+	internal static void GetDisplayColour(int tileType, ref Color infoColour, ref Color shadowColour) {
+		if (TileColours.TryGetValue(tileType, out var color)) {
+			infoColour.R = (byte) (infoColour.R * color.R / 255);
+			infoColour.G = (byte) (infoColour.G * color.G / 255);
+			infoColour.B = (byte) (infoColour.B * color.B / 255);
+			infoColour.A = (byte) (infoColour.A * color.A / 255);
+			shadowColour = infoColour * 0.1f;
+			shadowColour.A = 255;
+		}
 	}
 
 	internal class DrawInfoAccsPatch : Patch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "DrawInfoAccs");
 
 		public override void PatchMethodBody(MethodDef method) {
+			var infoTextColourLocal = ColouredInfoAccessoriesHelper.InfoColourLocal;
+			var infoTextShadowColourLocal = ColouredInfoAccessoriesHelper.InfoShadowColourLocal;
+
 			// Insert code just before the line setting a bool local to true after `Language.GetTextValue("GameUI.OreDetected", ...)`.
 			var instructions = method.Body.Instructions;
-			for (int i = 0; i < instructions.Count; i++) {
+			for (var i = 0; i < instructions.Count; i++) {
 				if (instructions[i].IsConstant("GameUI.OreDetected")) {
 					for (i++; i < instructions.Count; i++) {
 						if (instructions[i].IsConstant(1)) {
@@ -97,8 +102,9 @@ internal class ColouredMetalDetector : PatchSet {
 											newRefInstruction.Operand = treasureTileLocal;
 
 											instructions.Insert(i, newRefInstruction);
-											instructions.Insert(i + 1, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessories.InfoColourLocal));
-											instructions.Insert(i + 2, Call(ColouredMetalDetector.GetDisplayColour));
+											instructions.Insert(i + 1, OpCodes.Ldloca_S.ToInstruction(infoTextColourLocal));
+											instructions.Insert(i + 2, OpCodes.Ldloca_S.ToInstruction(infoTextShadowColourLocal));
+											instructions.Insert(i + 3, Call(ColouredMetalDetector.GetDisplayColour));
 
 											return;
 										}
