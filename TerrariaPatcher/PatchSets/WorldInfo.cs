@@ -16,7 +16,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class WorldInfo : PatchSet {
 	public override string Name => "World Info";
-	public override Version Version => new(1, 0);
+	public override Version Version => new(1, 1);
 	public override string Description => "Shows world information upon entering and with a client command.";
 	public override IReadOnlyCollection<Type>? Dependencies => new[] { typeof(Commands) };
 
@@ -50,11 +50,17 @@ internal class WorldInfo : PatchSet {
 			: "[c/00FFFF:Tiny+]";
 
 		var secrets = new List<string>();
-		if (Main.tenthAnniversaryWorld) secrets.Add("10th Anniversary");
-		if (Main.dontStarveWorld) secrets.Add("Don't Starve");
-		if (Main.drunkWorld) secrets.Add("Drunk World");
-		if (Main.getGoodWorld) secrets.Add("For the Worthy");
-		if (Main.notTheBeesWorld) secrets.Add("Not the Bees!");
+		if (Main.zenithWorld)
+			secrets.Add("Zenith World");
+		else {
+			if (Main.tenthAnniversaryWorld) secrets.Add("10th Anniversary");
+			if (Main.dontStarveWorld) secrets.Add("Don't Starve");
+			if (Main.drunkWorld) secrets.Add("Drunk World");
+			if (Main.getGoodWorld) secrets.Add("For the Worthy");
+			if (Main.notTheBeesWorld) secrets.Add("Not the Bees!");
+			if (Main.noTrapsWorld) secrets.Add("No Traps");
+			if (Main.remixWorld) secrets.Add("Remix");
+		}
 		var secretsText = secrets.Count > 0 ? $"  Secret: [c/FFFFFF:{string.Join(", ", secrets)}]" : "";
 
 		var difficultyText = Main.GameModeInfo.IsJourneyMode ? "[c/FF78BB:Journey]"
