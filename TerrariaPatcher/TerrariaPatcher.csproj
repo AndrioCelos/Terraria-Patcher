@@ -83,13 +83,14 @@
     <Compile Include="Patch.cs" />
     <Compile Include="PatchSet.cs" />
     <Compile Include="PatchSets\AccessorySwitchCommands.cs" />
-    <Compile Include="PatchSets\BossBars.cs" />
+    <Compile Include="PatchSets\EterniaCrystalBossBar.cs" />
     <Compile Include="PatchSets\BuffTime.cs" />
     <Compile Include="PatchSets\ColouredChatNames.cs" />
+    <Compile Include="PatchSets\ColouredInfoAccessories.cs" />
     <Compile Include="PatchSets\ColouredMetalDetector.cs" />
     <Compile Include="PatchSets\Commands.cs" />
-    <Compile Include="PatchSets\MetalDetectorMod.cs" />
     <Compile Include="PatchSets\ForTheWorthyBestiaryMod.cs" />
+    <Compile Include="PatchSets\MetalDetectorMod.cs" />
     <Compile Include="PatchSets\InfoAccessoryDisplayFix.cs" />
     <Compile Include="PatchSets\RemoveSteamAchievements.cs" />
     <Compile Include="PatchSets\ShootFix.cs" />
@@ -112,7 +113,6 @@
     <Compile Include="PatchSets\ColouredLifeformAnalyzer.cs" />
     <Compile Include="PatchSets\SundialHint.cs" />
     <Compile Include="PatchSets\StopwatchAndTallyCounter.cs" />
-    <Compile Include="PatchSets\ColouredInfoAccessories.cs" />
     <Compile Include="PatchSets\Watch24Hour.cs" />
     <Compile Include="PatchSets\WorldInfo.cs" />
     <Compile Include="PatchTarget.cs" />
