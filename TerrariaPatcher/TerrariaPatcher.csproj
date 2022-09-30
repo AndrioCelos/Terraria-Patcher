@@ -93,7 +93,6 @@
     <Compile Include="PatchSets\MetalDetectorMod.cs" />
     <Compile Include="PatchSets\InfoAccessoryDisplayFix.cs" />
     <Compile Include="PatchSets\RemoveSteamAchievements.cs" />
-    <Compile Include="PatchSets\ShootFix.cs" />
     <Compile Include="PatchSets\DungeonGuardianBossMusic.cs" />
     <Compile Include="PatchSets\MenuTitleSplash.cs" />
     <Compile Include="PatchSets\WordWrapFix.cs" />
