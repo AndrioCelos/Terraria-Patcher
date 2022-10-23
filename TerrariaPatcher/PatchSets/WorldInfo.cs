@@ -64,7 +64,7 @@ internal class WorldInfo : PatchSet {
 		var secretsText = secrets.Count > 0 ? $"  Secret: [c/FFFFFF:{string.Join(", ", secrets)}]" : "";
 
 		var difficultyText = Main.GameModeInfo.IsJourneyMode ? "[c/FF78BB:Journey]"
-			: Main.masterMode ? (Main.getGoodWorld ? "[c/32CD32:Legendary]" : "[c/FF261A:Master]")
+			: Main.masterMode ? (Main.getGoodWorld && Main.GameMode == 2 ? "[c/32CD32:Legendary]" : "[c/FF261A:Master]")
 			: Main.expertMode ? "[c/FF9900:Expert]"
 			: "[c/FFFFFF:Classic]";
 		var stageText = Main.hardMode ? "[c/36D8D8:Hardmode]" : "[c/FFFFFF:Pre-hardmode]";
