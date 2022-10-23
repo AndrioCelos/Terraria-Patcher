@@ -15,7 +15,7 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class ColouredMetalDetector : PatchSet {
 	public override string Name => "Coloured Metal Detector";
-	public override Version Version => new(1, 1);
+	public override Version Version => new(1, 2);
 	public override string Description => "Colours the metal detector text depending on the detected treasure.";
 
 	private static Color Gray => new(130, 130, 130);
@@ -64,6 +64,7 @@ internal class ColouredMetalDetector : PatchSet {
 	};
 
 	internal static void GetDisplayColour(int tileType, ref Color infoColour, ref Color shadowColour) {
+		if (tileType == TileID.LifeCrystalBoulder) tileType = TileID.Heart;
 		if (TileColours.TryGetValue(tileType, out var color)) {
 			infoColour.R = (byte) (infoColour.R * color.R / 255);
 			infoColour.G = (byte) (infoColour.G * color.G / 255);
