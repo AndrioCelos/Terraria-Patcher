@@ -51,10 +51,10 @@ internal class WorldInfo : PatchSet {
 
 		var secrets = new List<string>();
 		if (Main.zenithWorld)
-			secrets.Add("Zenith World");
+			secrets.Add("Everything");
 		else {
 			if (Main.tenthAnniversaryWorld) secrets.Add("10th Anniversary");
-			if (Main.dontStarveWorld) secrets.Add("Don't Starve");
+			if (Main.dontStarveWorld) secrets.Add("The Constant");
 			if (Main.drunkWorld) secrets.Add("Drunk World");
 			if (Main.getGoodWorld) secrets.Add("For the Worthy");
 			if (Main.notTheBeesWorld) secrets.Add("Not the Bees!");
