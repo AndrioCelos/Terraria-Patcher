@@ -18,6 +18,7 @@ internal class MetalDetectorMod : PatchSet {
 			var newPriority = (short) (Main.tileOreFinderPriority[TileID.Containers] - 1);
 			Main.tileOreFinderPriority[TileID.Heart] = newPriority;
 			Main.tileOreFinderPriority[TileID.LifeCrystalBoulder] = newPriority;
+			Main.tileOreFinderPriority[TileID.ManaCrystal] = newPriority;
 		}
 	}
 }

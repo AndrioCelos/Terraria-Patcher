@@ -39,6 +39,7 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 		{ NPCID.Tim                 , Green },
 		{ NPCID.DoctorBones         , Green },
 		{ NPCID.TheGroom            , Blue },
+		{ NPCID.VoodooDemon         , Orange },
 		{ NPCID.DungeonSlime        , Green },
 		{ NPCID.GoblinScout         , Blue },
 		{ NPCID.Mimic               , LightRed },
@@ -80,6 +81,7 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 		{ NPCID.Gnome               , Blue },
 		{ NPCID.IceMimic            , LightRed },
 		{ NPCID.GoldenSlime         , Gold },
+		{ NPCID.BoundTownSlimePurple, LightPurple },
 		{ NPCID.TruffleWorm         , LightPurple },
 		{ NPCID.GoldBird            , Gold },
 		{ NPCID.GoldBunny           , Gold },
@@ -99,6 +101,7 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 		{ NPCID.GoldWaterStrider    , Gold },
 		{ NPCID.GoldSeahorse        , Gold },
 		{ NPCID.EmpressButterfly    , LightPurple },
+		{ NPCID.BoundTownSlimeYellow, Orange },
 		{ NPCID.BoundGoblin         , Green },
 		{ NPCID.BoundWizard         , LightPurple },
 		{ NPCID.BoundMechanic       , Orange },
@@ -106,7 +109,8 @@ internal class ColouredLifeformAnalyzer : PatchSet {
 		{ NPCID.SleepingAngler      , Green },
 		{ NPCID.SkeletonMerchant    , Green },
 		{ NPCID.BartenderUnconscious, Green },
-		{ NPCID.GolferRescue        , Green }
+		{ NPCID.GolferRescue        , Green },
+		{ NPCID.BoundTownSlimeOld   , Orange }
 	};
 
 	internal static void GetDisplayColour(int npcIndex, ref Color infoColour, ref Color shadowColour) {
