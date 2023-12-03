@@ -103,7 +103,6 @@ internal class StopwatchAndTallyCounter : PatchSet {
 				   "Shows, hides or controls the mod stopwatch."));
 			Player.Hooks.OnEnterWorld += Hooks_OnEnterWorld;
 
-			Terraria.Program.SavePath = Environment.CurrentDirectory;  // This must be set to something; otherwise the Main static constructor will crash.
 			Main.OnTickForInternalCodeOnly += Main_OnTick;
 			// This event must be used because OnTickForThirdPartySoftwareOnly may be called many times between frames, or while paused.
 
