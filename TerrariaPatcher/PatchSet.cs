@@ -178,17 +178,9 @@ public abstract class PatchSet {
 
 	private void CopyStaticMembers(Type originalType, TypeDef originalTypeDef, TypeDef copyTypeDef) {
 		// Find nested types that must not be copied because they contain compiler-generated delegates that are used at patch time only.
-		// TODO: this may fail if it also contains run-time compiler-generated delegates.
 		var nestedTypesThatMustNotBeCopied = new HashSet<string>();
-		var patchMethodBodyMethod = originalTypeDef.FindMethod(nameof(Patch.PatchMethodBody));
-		if (patchMethodBodyMethod != null) {
-			foreach (var instruction in patchMethodBodyMethod.Body.Instructions) {
-				if (instruction.Is(Code.Stsfld) && instruction.Operand is FieldDef field
-					&& field.DeclaringType.CustomAttributes.Any(a => a.AttributeType.Name == "CompilerGeneratedAttribute")) {
-					nestedTypesThatMustNotBeCopied.Add(field.DeclaringType.Name);
-				}
-			}
-		}
+		FindCompileTimeDelegateTypesFromMethod(nestedTypesThatMustNotBeCopied, originalTypeDef.FindMethod(nameof(Patch.PatchMethodBody)));
+		FindCompileTimeDelegateTypesFromMethod(nestedTypesThatMustNotBeCopied, originalTypeDef.FindProperty(nameof(Patch.TargetMethod))?.GetMethod);
 
 		foreach (var type in originalType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)) {
 			if (type.GetCustomAttribute<NoCopyToTargetAttribute>() is null
@@ -242,6 +234,18 @@ public abstract class PatchSet {
 		foreach (var method in originalTypeDef.Methods
 			.Where(m => m.IsStatic && GetCustomAttribute(m.CustomAttributes, typeof(NoCopyToTargetAttribute)) is null).ToList()) {
 			method.DeclaringType = copyTypeDef;
+		}
+	}
+
+	private static void FindCompileTimeDelegateTypesFromMethod(HashSet<string> list, MethodDef? method) {
+		if (method == null) return;
+		// Look for static fields in compiler-generated types that are assigned by the method, assuming that these are patch-time delegates.
+		// TODO: This will cause failures if those types also include run-time delegates.
+		foreach (var instruction in method.Body.Instructions) {
+			if (instruction.Is(Code.Stsfld) && instruction.Operand is FieldDef field
+				&& field.DeclaringType.CustomAttributes.Any(a => a.AttributeType.Name == "CompilerGeneratedAttribute")) {
+				list.Add(field.DeclaringType.Name);
+			}
 		}
 	}
 
