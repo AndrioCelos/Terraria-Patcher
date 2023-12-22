@@ -45,7 +45,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	}
 
 	public override string Name => "Stopwatch and Tally Counter";
-	public override Version Version => new(2, 2);
+	public override Version Version => new(2, 3);
 	public override string Description => "Use the stopwatch and tally counter as an actual stopwatch and tally counter with client commands.";
 	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
 
@@ -79,7 +79,8 @@ internal class StopwatchAndTallyCounter : PatchSet {
 				time = -time;
 			}
 
-			var minutes = time / 3600;
+			var hours = time / 216000;
+			var minutes = time / 3600 % 60;
 			var seconds = time / 60 % 60;
 			var cs = time % 60 * 5 / 3;
 
@@ -90,7 +91,7 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			shadowColour = infoColour * 0.1f;
 			shadowColour.A = 255;
 
-			return $"{(minus ? "-" : "")}{minutes:00}' {seconds:00}.{cs:00}\"";
+			return $"{(minus ? "-" : "")}{(hours > 0 ? $"{hours}h " : "")}{minutes:00}' {seconds:00}.{cs:00}\"";
 		} else
 			return null;
 	}
