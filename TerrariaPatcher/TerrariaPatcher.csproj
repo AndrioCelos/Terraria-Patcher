@@ -83,6 +83,9 @@
     <Compile Include="Patch.cs" />
     <Compile Include="PatchSet.cs" />
     <Compile Include="PatchSets\AccessorySwitchCommands.cs" />
+    <Compile Include="PatchSets\AchievementsPerCharacter.cs" />
+    <Compile Include="PatchSets\SmartCursorAdjustments.cs" />
+    <Compile Include="PatchSets\ModifierGrammar.cs" />
     <Compile Include="PatchSets\EterniaCrystalBossBar.cs" />
     <Compile Include="PatchSets\BuffTime.cs" />
     <Compile Include="PatchSets\ColouredChatNames.cs" />
@@ -94,6 +97,7 @@
     <Compile Include="PatchSets\RemoveSteamAchievements.cs" />
     <Compile Include="PatchSets\DungeonGuardianBossMusic.cs" />
     <Compile Include="PatchSets\MenuTitleSplash.cs" />
+    <Compile Include="PatchSets\DodgeSound.cs" />
     <Compile Include="PatchSets\UuidSecurity.cs" />
     <Compile Include="PatchSets\WordWrapFix.cs" />
     <Compile Include="PatchSets\ItemSorting.cs" />
@@ -113,6 +117,7 @@
     <Compile Include="PatchSets\SundialHint.cs" />
     <Compile Include="PatchSets\StopwatchAndTallyCounter.cs" />
     <Compile Include="PatchSets\Watch24Hour.cs" />
+    <Compile Include="PatchSets\UpgradeChecklist.cs" />
     <Compile Include="PatchSets\WorldInfo.cs" />
     <Compile Include="PatchTarget.cs" />
     <Compile Include="PatchVersionAttribute.cs" />
