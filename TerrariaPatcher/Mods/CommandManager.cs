@@ -189,7 +189,7 @@ internal static class CommandManager {
 	}
 
 	public static void HandleInput(IEnumerable<Keys> pressedKeys) {
-		if (Main.drawingPlayerChat || Main.editSign || Main.editChest || Main.blockInput) return;
+		if (Main.drawingPlayerChat || Main.editSign || Main.editChest || Main.blockInput || Main.CurrentInputTextTakerOverride is not null) return;
 
 		currentKeys.Clear();
 		currentModifiers = 0;
