@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -84,12 +84,12 @@
     <Compile Include="PatchSet.cs" />
     <Compile Include="PatchSets\AccessorySwitchCommands.cs" />
     <Compile Include="PatchSets\AchievementsPerCharacter.cs" />
+    <Compile Include="PatchSets\InfoAccessoryModifier.cs" />
     <Compile Include="PatchSets\SmartCursorAdjustments.cs" />
     <Compile Include="PatchSets\ModifierGrammar.cs" />
     <Compile Include="PatchSets\EterniaCrystalBossBar.cs" />
     <Compile Include="PatchSets\BuffTime.cs" />
     <Compile Include="PatchSets\ColouredChatNames.cs" />
-    <Compile Include="PatchSets\ColouredInfoAccessories.cs" />
     <Compile Include="PatchSets\ColouredMetalDetector.cs" />
     <Compile Include="PatchSets\Commands.cs" />
     <Compile Include="PatchSets\MetalDetectorMod.cs" />
@@ -98,6 +98,7 @@
     <Compile Include="PatchSets\DungeonGuardianBossMusic.cs" />
     <Compile Include="PatchSets\MenuTitleSplash.cs" />
     <Compile Include="PatchSets\DodgeSound.cs" />
+    <Compile Include="PatchSets\SlimeRainTallyCounter.cs" />
     <Compile Include="PatchSets\UuidSecurity.cs" />
     <Compile Include="PatchSets\WordWrapFix.cs" />
     <Compile Include="PatchSets\ItemSorting.cs" />

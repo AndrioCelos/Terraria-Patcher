@@ -5,12 +5,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-
 using TerrariaPatcher.Mods;
-
 using MethodAttributes = dnlib.DotNet.MethodAttributes;
 using TypeAttributes = dnlib.DotNet.TypeAttributes;
 
@@ -257,6 +254,7 @@ public abstract class PatchSet {
 			var prefixMethod = patch.GetType().GetMethod("Prefix", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 			if (prefixMethod is not null && prefixMethod.GetParameters().Length == 0) {
 				CommandManager.Commands.Clear();
+				Terraria.Program.SavePath ??= Environment.CurrentDirectory;
 				prefixMethod.Invoke(null, null);
 				return CommandManager.Commands.ToList();
 			}

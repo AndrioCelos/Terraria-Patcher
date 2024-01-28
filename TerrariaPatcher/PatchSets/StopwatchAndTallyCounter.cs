@@ -45,9 +45,9 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	}
 
 	public override string Name => "Stopwatch and Tally Counter";
-	public override Version Version => new(2, 3);
+	public override Version Version => new(2, 4);
 	public override string Description => "Use the stopwatch and tally counter as an actual stopwatch and tally counter with client commands.";
-	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands) };
+	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(Commands), typeof(InfoAccessoryModifier) };
 
 	public static CounterState Counter = new();
 	public static StopwatchState Stopwatch = new();
@@ -57,8 +57,9 @@ internal class StopwatchAndTallyCounter : PatchSet {
 	internal static string GetCounterTitle(string normalTitle) => Counter.Showing ? Lang.GetItemName(ItemID.TallyCounter).Value : normalTitle;
 	internal static string GetStopwatchTitle(string normalTitle) => Stopwatch.Showing ? Lang.GetItemName(ItemID.Stopwatch).Value : normalTitle;
 
-	internal static string? GetCounterDisplayString(ref Color infoColour, ref Color shadowColour) {
+	internal static string? GetCounterDisplayString(ref string title, ref Color infoColour, ref Color shadowColour) {
 		if (Counter.Showing) {
+			title = Lang.GetItemName(ItemID.TallyCounter).Value;
 			infoColour.R = (byte) (infoColour.R * ModManager.AccentColor.R / 255);
 			infoColour.G = (byte) (infoColour.G * ModManager.AccentColor.G / 255);
 			infoColour.B = (byte) (infoColour.B * ModManager.AccentColor.B / 255);
@@ -70,8 +71,10 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			return null;
 	}
 
-	internal static string? GetStopwatchDisplayString(ref Color infoColour, ref Color shadowColour) {
+	internal static string? GetStopwatchDisplayString(ref string title, ref Color infoColour, ref Color shadowColour) {
 		if (Stopwatch.Showing) {
+			title = Lang.GetItemName(ItemID.Stopwatch).Value;
+
 			bool minus = false;
 			var time = Stopwatch.SplitTime != 0 ? Stopwatch.SplitTime : Stopwatch.Time;
 			if (time < 0) {
@@ -110,6 +113,15 @@ internal class StopwatchAndTallyCounter : PatchSet {
 			if (File.Exists(Path.Combine(Main.SavePath, "accessoryData.json"))) {
 				using var reader = new JsonTextReader(new StreamReader(Path.Combine(Main.SavePath, "accessoryData.json")));
 				saveData = new JsonSerializer().Deserialize<Dictionary<string, SaveData>>(reader);
+			}
+
+			InfoAccessoryModifier.DrawInfoAccessory += DrawInfoAccessory;
+		}
+
+		private static void DrawInfoAccessory(int item, ref string title, ref string? text, ref Color colour, ref Color shadowColour) {
+			switch (item) {
+				case ItemID.Stopwatch: text = GetStopwatchDisplayString(ref title, ref colour, ref shadowColour); break;
+				case ItemID.TallyCounter: text = GetCounterDisplayString(ref title, ref colour, ref shadowColour); break;
 			}
 		}
 	}
@@ -262,74 +274,6 @@ internal class StopwatchAndTallyCounter : PatchSet {
 				return;
 		}
 		SoundEngine.PlaySound(SoundID.MenuTick);
-	}
-
-	internal class DrawInfoAccsPatch : Patch {
-		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "DrawInfoAccs");
-
-		public override void PatchMethodBody(MethodDef method) {
-			// Replace the code after `text3 = Lang.inter[N].Value` that builds the display string.
-			bool counterReplaced = false, stopwatchReplaced = false;
-			var instructions = method.Body.Instructions;
-			for (int i = 3; i < instructions.Count && !(counterReplaced && stopwatchReplaced); i++) {
-				if (instructions[i - 3].IsConstant(101)
-					&& instructions[i].IsStloc()) {
-					i++;
-
-					for (var j = i; ; j++) {
-						if (instructions[j].Is(Code.Br) || instructions[j].Is(Code.Br_S)) {
-							// Copy this jump if we want to override the display text.
-							var jumpInstruction = instructions[j].Operand;
-							var local = instructions[j - 3].GetLocal(method.Body.Variables);
-
-							// Now add our code.
-							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoColourLocal));
-							instructions.Insert(i + 1, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoShadowColourLocal));
-							instructions.Insert(i + 2, Call(StopwatchAndTallyCounter.GetCounterDisplayString));
-							instructions.Insert(i + 3, OpCodes.Stloc_S.ToInstruction(local));
-							instructions.Insert(i + 4, OpCodes.Ldloc_S.ToInstruction(local));
-							instructions.Insert(i + 5, new(OpCodes.Brtrue, jumpInstruction));
-
-							instructions.Insert(i - 1, Call(StopwatchAndTallyCounter.GetCounterTitle));
-
-							counterReplaced = true;
-							i = j + 6;
-							break;
-						}
-					}
-				} else if (instructions[i - 3].IsConstant(103)
-					&& instructions[i].IsStloc()) {
-					i++;
-
-					var foundBaseText = false;
-					for (var j = i; ; j++) {
-						if (!foundBaseText) {
-							if (instructions[j].IsConstant("GameUI.Speed"))
-								foundBaseText = true;
-						} else if (instructions[j].IsStloc()) {
-							// Jump after here if we want to override the stopwatch text.
-							var jumpInstruction = instructions[j + 1];
-							var local = instructions[j].GetLocal(method.Body.Variables);
-
-							// Now add our code.
-							instructions.Insert(i, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoColourLocal));
-							instructions.Insert(i + 1, OpCodes.Ldloca_S.ToInstruction(ColouredInfoAccessoriesHelper.InfoShadowColourLocal));
-							instructions.Insert(i + 2, Call(StopwatchAndTallyCounter.GetStopwatchDisplayString));
-							instructions.Insert(i + 3, OpCodes.Stloc_S.ToInstruction(local));
-							instructions.Insert(i + 4, OpCodes.Ldloc_S.ToInstruction(local));
-							instructions.Insert(i + 5, new(OpCodes.Brtrue, jumpInstruction));
-							
-							instructions.Insert(i - 1, Call(StopwatchAndTallyCounter.GetStopwatchTitle));
-
-							i = j + 6;
-							stopwatchReplaced = true;
-							break;
-						}
-					}
-				}
-			}
-			if (!counterReplaced || !stopwatchReplaced) throw new ArgumentException("Couldn't find code to replace.");
-		}
 	}
 
 	internal class SavePlayerPatch : PrefixPatch {

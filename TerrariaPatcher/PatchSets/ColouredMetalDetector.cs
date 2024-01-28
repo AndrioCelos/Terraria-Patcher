@@ -15,8 +15,9 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class ColouredMetalDetector : PatchSet {
 	public override string Name => "Coloured Metal Detector";
-	public override Version Version => new(1, 2);
+	public override Version Version => new(1, 3);
 	public override string Description => "Colours the metal detector text depending on the detected treasure.";
+	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(InfoAccessoryModifier) };
 
 	private static Color Gray => new(130, 130, 130);
 	private static Color Blue => new(150, 150, 255);
@@ -82,8 +83,8 @@ internal class ColouredMetalDetector : PatchSet {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "DrawInfoAccs");
 
 		public override void PatchMethodBody(MethodDef method) {
-			var infoTextColourLocal = ColouredInfoAccessoriesHelper.InfoColourLocal;
-			var infoTextShadowColourLocal = ColouredInfoAccessoriesHelper.InfoShadowColourLocal;
+			var infoTextColourLocal = InfoAccessoryModifier.InfoColourLocal;
+			var infoTextShadowColourLocal = InfoAccessoryModifier.InfoShadowColourLocal;
 
 			// Insert code just before the line setting a bool local to true after `Language.GetTextValue("GameUI.OreDetected", ...)`.
 			var instructions = method.Body.Instructions;

@@ -15,8 +15,9 @@ namespace TerrariaPatcher.PatchSets;
 
 internal class ColouredLifeformAnalyzer : PatchSet {
 	public override string Name => "Coloured Lifeform Analyzer";
-	public override Version Version => new(1, 2);
+	public override Version Version => new(1, 3);
 	public override string Description => "Colours the lifeform analyzer text depending on the detected lifeform.";
+	public override IReadOnlyCollection<Type> Dependencies => new[] { typeof(InfoAccessoryModifier) };
 
 	private static Color Gray => new(100, 100, 100);
 	private static Color Blue => new(150, 150, 255);
