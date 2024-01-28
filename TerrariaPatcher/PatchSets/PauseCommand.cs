@@ -34,7 +34,7 @@ internal class PauseCommand : PatchSet {
 		}
 	}
 
-	internal class OldOnesArmyCountdownPatch : PrefixPatch {
+	internal class CanPauseGamePatch : PrefixPatch {
 		public override PatchTarget TargetMethod => PatchTarget.Create(typeof(Main), "CanPauseGame");
 
 		public static void Postfix(ref bool __result) {
